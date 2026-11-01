@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "test": "vitest run",
+    "cosign-demo": "tsx bench/cosign-demo.ts",
     "replay": "tsx bench/replay.ts",
     "gen-recordings": "tsx bench/gen-recordings.ts",
     "redteam": "tsx bench/redteam.ts",
@@ -18,6 +19,8 @@
     "@near-js/crypto": "^2.5.1",
     "@near-js/providers": "^2.5.1",
     "@near-js/signers": "^2.5.1",
+    "@near-js/transactions": "^2.5.1",
+    "borsh": "^1.0.0",
     "bs58": "^6.0.0",
     "openai": "^7.45.1"
   },
