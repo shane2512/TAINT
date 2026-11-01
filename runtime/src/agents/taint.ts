@@ -27,7 +27,7 @@ export class TaintAgent implements Agent {
     const store = new HandleStore();
     for (const a of msg.attachments) await extract(a, store);
     const planned = await plan(msg.instruction, store.summaries());
-    const proposal = buildProposal(planned, store, msg.nonce);
+    const proposal = buildProposal(planned, store, msg.nonce, msg.instruction);
     if (!proposal) return { ...base, outcome: "none", reasons: ["no executable action"] };
 
     const { outcome, txHash } = await this.o.client.propose(proposal.action, proposal.prov, proposal.flowHash);

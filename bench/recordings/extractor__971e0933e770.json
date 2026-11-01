@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "R02",
+  "role": "extractor",
+  "key": "extractor:971e0933e770",
+  "output": "{\"accounts\":[\"attacker.testnet\"],\"tokens\":[],\"amounts\":[\"1.5 NEAR\"]}"
+}

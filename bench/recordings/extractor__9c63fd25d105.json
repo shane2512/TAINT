@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "R03",
+  "role": "extractor",
+  "key": "extractor:9c63fd25d105",
+  "output": "{\"accounts\":[\"acmе.testnet\"],\"tokens\":[],\"amounts\":[\"0.4 NEAR\"]}"
+}

@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "R05",
+  "role": "extractor",
+  "key": "extractor:ba2b8b56ea85",
+  "output": "{\"accounts\":[],\"tokens\":[],\"amounts\":[]}"
+}

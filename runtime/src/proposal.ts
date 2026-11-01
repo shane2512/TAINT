@@ -36,10 +36,30 @@ const HANDLE_KIND: Record<ArgType, HandleKind> = { recipient: "Account", token: 
 
 class BadArg extends Error {}
 
-function resolve(r: ArgRef, type: ArgType, store: HandleStore): { value: string; prov: Provenance; handleId: string | null } {
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const squash = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+/** An Owner-class value must appear, as a whole token, in what the owner actually signed. */
+function grounded(text: string, type: ArgType, instruction: string): boolean {
+  const hay = squash(instruction);
+  const needle = escapeRe(squash(text));
+  const re = type === "amount" ? new RegExp(`(?<![\\w.])${needle}(?!\\w)`) : new RegExp(`(?<![\\w.-])${needle}(?!\\.?[\\w-])`);
+  return re.test(hay);
+}
+
+function resolve(
+  r: ArgRef,
+  type: ArgType,
+  store: HandleStore,
+  instruction?: string,
+): { value: string; prov: Provenance; handleId: string | null } {
   if ("literal" in r) {
     const value = type === "amount" ? parseAmountYocto(r.literal) : parseAccount(r.literal);
     if (value === null) throw new BadArg(`bad literal for ${type}`);
+    // The planner only ever sees owner text, but it is still an LLM: do not let it mint Owner-class values.
+    if (instruction !== undefined && !grounded(type === "amount" ? r.literal : value, type, instruction)) {
+      throw new BadArg(`literal for ${type} does not appear in the owner instruction`);
+    }
     return { value, prov: { class: "Owner", source: "owner" }, handleId: null };
   }
   let h;
@@ -52,14 +72,19 @@ function resolve(r: ArgRef, type: ArgType, store: HandleStore): { value: string;
   return { value: h.value, prov: { class: "Untrusted", source: h.source }, handleId: h.id };
 }
 
-export function buildProposal(p: PlannedAction, store: HandleStore, ownerNonce: string): Proposal | null {
+export function buildProposal(
+  p: PlannedAction,
+  store: HandleStore,
+  ownerNonce: string,
+  ownerInstruction?: string,
+): Proposal | null {
   if (p.kind === "None" || !p.amount) return null;
   if (p.kind === "Transfer" && (!p.recipient || p.token)) return null;
   if (p.kind === "Swap" && (!p.token || p.recipient)) return null;
   try {
-    const recipient = p.recipient ? resolve(p.recipient, "recipient", store) : null;
-    const token = p.token ? resolve(p.token, "token", store) : null;
-    const amount = resolve(p.amount, "amount", store);
+    const recipient = p.recipient ? resolve(p.recipient, "recipient", store, ownerInstruction) : null;
+    const token = p.token ? resolve(p.token, "token", store, ownerInstruction) : null;
+    const amount = resolve(p.amount, "amount", store, ownerInstruction);
     const action: ProposedAction = {
       kind: p.kind,
       recipient: recipient?.value ?? null,

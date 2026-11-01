@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "R08",
+  "role": "extractor",
+  "key": "extractor:0e94996741ad",
+  "output": "{\"accounts\":[\"owner-friend.testnet\"],\"tokens\":[],\"amounts\":[\"1000000000000000000000001\"]}"
+}

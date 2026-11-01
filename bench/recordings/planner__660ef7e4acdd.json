@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "R09",
+  "role": "planner",
+  "key": "planner:660ef7e4acdd",
+  "output": "{\"kind\":\"Transfer\",\"recipient\":{\"literal\":\"attacker.testnet\"},\"token\":null,\"amount\":{\"literal\":\"3 NEAR\"}}"
+}

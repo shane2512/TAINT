@@ -12,6 +12,7 @@ import { mode } from "../runtime/src/llm";
 import { MockContract, defaultMockConfig } from "../runtime/src/mock-contract";
 import { MockContractClient } from "../runtime/src/near";
 import { Attachment, signOwnerMessage } from "../runtime/src/owner";
+import { Setup, applySetup } from "./setup";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -24,7 +25,7 @@ export interface Fixture {
   source_urls: string[];
   instruction: string;
   attachments: Attachment[];
-  setup?: { pins?: string[]; payees?: { by: string; address: string }[] };
+  setup?: Setup;
   expect: { naive: Label; allowlist: Label; taint: Label };
   model_outputs: { extractor: object[]; planner: object; naive: object };
 }
@@ -71,8 +72,7 @@ export async function runReplay(ids: string[], runs = 1): Promise<Row[]> {
     if (!f) throw new Error(`unknown fixture ${id}`);
     for (let run = 0; run < runs; run++) {
       const contract = new MockContract(defaultMockConfig());
-      for (const p of f.setup?.pins ?? []) contract.pin(p);
-      for (const p of f.setup?.payees ?? []) contract.registerPayee(p.by, p.address);
+      applySetup(contract, f.setup);
       const common = { ownerPublicKey, network };
       const agents: Agent[] = [
         new NaiveAgent({ ...common, executor: new MockExecutor() }),

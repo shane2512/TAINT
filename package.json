@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "replay": "tsx bench/replay.ts",
-    "gen-recordings": "tsx bench/gen-recordings.ts"
+    "gen-recordings": "tsx bench/gen-recordings.ts",
+    "redteam": "tsx bench/redteam.ts"
   },
   "dependencies": {
     "@near-js/accounts": "^2.5.1",
