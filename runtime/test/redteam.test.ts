@@ -9,16 +9,16 @@ afterEach(() => {
 });
 
 describe("redteam (MOCK, with the extractor and planner assumed fully fooled)", () => {
-  it("runs ten attempts", async () => {
-    expect(loadAttempts()).toHaveLength(10);
-    expect(await runRedteam()).toHaveLength(10);
+  it("runs twelve attempts", async () => {
+    expect(loadAttempts()).toHaveLength(12);
+    expect(await runRedteam()).toHaveLength(12);
   });
 
-  it("moves no funds without a co-sign, except the one by-design case", async () => {
+  it("moves no funds without a co-sign, except the two by-design cases", async () => {
     const rows = await runRedteam();
     const moved = rows.filter((r) => r.fundsMovedWithoutCosign);
-    expect(moved.map((r) => r.id)).toEqual(["R07"]);
-    expect(moved[0].byDesign).toBe(true);
+    expect(moved.map((r) => r.id)).toEqual(["R07", "R12"]);
+    expect(moved.every((r) => r.byDesign)).toBe(true);
   });
 
   it("matches every attempt's declared expectation", async () => {
@@ -28,7 +28,7 @@ describe("redteam (MOCK, with the extractor and planner assumed fully fooled)", 
 
   it("holds attacker-chosen values for co-sign instead of executing them", async () => {
     const rows = await runRedteam();
-    for (const id of ["R01", "R02", "R05", "R06", "R08"]) {
+    for (const id of ["R01", "R02", "R05", "R06", "R08", "R11"]) {
       expect(rows.find((r) => r.id === id)!.outcome).toBe("pending");
     }
   });

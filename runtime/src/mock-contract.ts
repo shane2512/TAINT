@@ -35,6 +35,7 @@ interface Record_ extends PendingProposal {
 
 const DAY = 24 * 60 * 60 * 1000;
 const PENDING_TTL = 15 * 60 * 1000;
+const U128_MAX = 2n ** 128n - 1n;
 
 export class MockContract {
   private book = new Map<string, BookEntry>();
@@ -129,6 +130,8 @@ export class MockContract {
   private evaluate(action: ProposedAction, prov: ArgProvenance): { reject: string } | { pending: string[] } | "execute" {
     if (action.kind === "Transfer" && (!action.recipient || action.token)) return { reject: "malformed" };
     if (action.kind === "Swap" && (!action.token || action.recipient)) return { reject: "malformed" };
+    const raw = BigInt(action.amount);
+    if (raw <= 0n || raw > U128_MAX) return { reject: "malformed" }; // the Rust contract's amount is a u128
     const reasons: string[] = [];
     let cap: bigint | undefined;
     if (action.kind === "Transfer" && prov.recipient?.class === "Untrusted") {
@@ -180,7 +183,14 @@ export class MockContract {
     if (!("Executed" in out)) return out;
     rec.status = "Executed";
     if (remember && rec.action.recipient) {
+      const prior = this.book.get(rec.action.recipient);
       this.remember(rec.action.recipient, undefined, undefined, rec.prov.recipient?.source ?? "owner");
+      if (prior && prior.expiresAt > this.cfg.now()) {
+        // approve-and-remember must never weaken an entry the owner already set
+        const entry = this.book.get(rec.action.recipient)!;
+        entry.cap = prior.cap > entry.cap ? prior.cap : entry.cap;
+        entry.expiresAt = Math.max(prior.expiresAt, entry.expiresAt);
+      }
     }
     return out;
   }

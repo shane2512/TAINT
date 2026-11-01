@@ -1,0 +1,140 @@
+{
+  "_comment": "Shared rule table for the TAINT policy. The TypeScript MockContract runs it today (runtime/test/policy-cases.test.ts); the Rust taint.near must run the SAME file. Ops: remember, pin, unpin, registerPayee, advance, propose, cosign. prov values: 'owner' or an untrusted source string.",
+  "config": {
+    "rememberCapNear": "1",
+    "rememberTtlMs": 2592000000,
+    "payeeCooldownMs": 86400000,
+    "payeeCooldownCapNear": "0.5",
+    "globalCap24hNear": "5"
+  },
+  "cases": [
+    {
+      "name": "owner recipient with owner amount executes, bounded only by the global cap",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "5" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "propose", "id": "b", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "1" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "global cap exceeded" } }
+      ]
+    },
+    {
+      "name": "the rolling window frees exactly at 24h (strict: now - ts < 24h)",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "5" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "advance", "ms": 86399999 },
+        { "op": "propose", "id": "b", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "1" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "global cap exceeded" } },
+        { "op": "advance", "ms": 1 },
+        { "op": "propose", "id": "c", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "1" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Executed": true } }
+      ]
+    },
+    {
+      "name": "a global-cap rejection on propose still burns the flow_hash",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "5" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "propose", "id": "b", "flow": "f-burned", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "1" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "global cap exceeded" } },
+        { "op": "advance", "ms": 86400000 },
+        { "op": "propose", "id": "c", "flow": "f-burned", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "1" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "duplicate flow_hash" } }
+      ]
+    },
+    {
+      "name": "a global-cap rejection on cosign leaves the proposal pending",
+      "steps": [
+        { "op": "propose", "id": "held", "action": { "kind": "Transfer", "recipient": "new.near", "amountNear": "0.5" }, "prov": { "recipient": "x.com/@a", "amount": "owner" }, "expect": { "Pending": ["recipient from x.com/@a"] } },
+        { "op": "propose", "id": "fill", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "5" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "cosign", "of": "held", "hash": "ok", "remember": false, "expect": { "Rejected": "global cap exceeded" } },
+        { "op": "cosign", "of": "held", "hash": "ok", "remember": false, "expect": { "Rejected": "global cap exceeded" } }
+      ]
+    },
+    {
+      "name": "a pending proposal can be co-signed at exactly 15 minutes",
+      "steps": [
+        { "op": "propose", "id": "held", "action": { "kind": "Transfer", "recipient": "new.near", "amountNear": "0.5" }, "prov": { "recipient": "x.com/@a", "amount": "owner" }, "expect": { "Pending": ["recipient from x.com/@a"] } },
+        { "op": "advance", "ms": 900000 },
+        { "op": "cosign", "of": "held", "hash": "ok", "remember": false, "expect": { "Executed": true } }
+      ]
+    },
+    {
+      "name": "a pending proposal has expired one millisecond after 15 minutes",
+      "steps": [
+        { "op": "propose", "id": "held", "action": { "kind": "Transfer", "recipient": "new.near", "amountNear": "0.5" }, "prov": { "recipient": "x.com/@a", "amount": "owner" }, "expect": { "Pending": ["recipient from x.com/@a"] } },
+        { "op": "advance", "ms": 900001 },
+        { "op": "cosign", "of": "held", "hash": "ok", "remember": false, "expect": { "throws": "expired" } }
+      ]
+    },
+    {
+      "name": "a payee registered by a pinned account is capped during the cooldown, then by the global cap; re-registering restarts the cooldown",
+      "steps": [
+        { "op": "pin", "account": "acme.near" },
+        { "op": "registerPayee", "by": "acme.near", "address": "pay.near" },
+        { "op": "advance", "ms": 86400000 },
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "pay.near", "amountNear": "1" }, "prov": { "recipient": "email", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "registerPayee", "by": "acme.near", "address": "pay.near" },
+        { "op": "propose", "id": "b", "action": { "kind": "Transfer", "recipient": "pay.near", "amountNear": "1" }, "prov": { "recipient": "email", "amount": "owner" }, "expect": { "Pending": ["amount above entry cap"] } }
+      ]
+    },
+    {
+      "name": "coverage is the larger of the address-book cap and the payee cap",
+      "steps": [
+        { "op": "remember", "address": "friend.near", "capNear": "3" },
+        { "op": "pin", "account": "acme.near" },
+        { "op": "registerPayee", "by": "acme.near", "address": "friend.near" },
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "friend.near", "amountNear": "2" }, "prov": { "recipient": "email", "amount": "owner" }, "expect": { "Executed": true } }
+      ]
+    },
+    {
+      "name": "an approve-and-remember never lowers an existing live entry",
+      "steps": [
+        { "op": "remember", "address": "friend.near", "capNear": "3" },
+        { "op": "propose", "id": "held", "action": { "kind": "Transfer", "recipient": "friend.near", "amountNear": "4" }, "prov": { "recipient": "web", "amount": "web" }, "expect": { "Pending": ["amount from web"] } },
+        { "op": "cosign", "of": "held", "hash": "ok", "remember": true, "expect": { "Executed": true } },
+        { "op": "propose", "id": "after", "action": { "kind": "Transfer", "recipient": "friend.near", "amountNear": "0.5" }, "prov": { "recipient": "web", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "advance", "ms": 86400001 },
+        { "op": "propose", "id": "bigger", "action": { "kind": "Transfer", "recipient": "friend.near", "amountNear": "2.5" }, "prov": { "recipient": "web", "amount": "owner" }, "expect": { "Executed": true } }
+      ]
+    },
+    {
+      "name": "a zero amount is malformed",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "0" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "malformed" } }
+      ]
+    },
+    {
+      "name": "an amount above u128 max is malformed",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "340282366920938463463374607431768211456" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "malformed" } }
+      ]
+    },
+    {
+      "name": "u128 max passes the shape check and then trips the global cap",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "340282366920938463463374607431768211455" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "global cap exceeded" } }
+      ]
+    },
+    {
+      "name": "the flow_hash is checked before anything else, even for a malformed repeat",
+      "steps": [
+        { "op": "propose", "id": "a", "flow": "f1", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "1" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Executed": true } },
+        { "op": "propose", "id": "b", "flow": "f1", "action": { "kind": "Transfer", "recipient": "alice.near", "amountYocto": "0" }, "prov": { "recipient": "owner", "amount": "owner" }, "expect": { "Rejected": "duplicate flow_hash" } }
+      ]
+    },
+    {
+      "name": "a swap with an untrusted amount is pending",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Swap", "token": "newtoken.near", "amountNear": "1" }, "prov": { "token": "owner", "amount": "web" }, "expect": { "Pending": ["amount from web"] } }
+      ]
+    },
+    {
+      "name": "an owner recipient with an untrusted amount is pending",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "1" }, "prov": { "recipient": "owner", "amount": "web" }, "expect": { "Pending": ["amount from web"] } }
+      ]
+    },
+    {
+      "name": "unpinning a vouching account revokes its payees",
+      "steps": [
+        { "op": "pin", "account": "acme.near" },
+        { "op": "registerPayee", "by": "acme.near", "address": "pay.near" },
+        { "op": "unpin", "account": "acme.near" },
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "pay.near", "amountNear": "0.1" }, "prov": { "recipient": "email", "amount": "owner" }, "expect": { "Pending": ["recipient from email"] } }
+      ]
+    }
+  ]
+}

@@ -104,6 +104,20 @@ describe("TaintAgent", () => {
     expect(contract.spent24h()).toBe(200000000000000000000000n);
   });
 
+  it("blocks a replay even when the model plans something different the second time", async () => {
+    const i = "swap 0.2 NEAR into newtoken.testnet";
+    const m = signOwnerMessage(i, [], ownerKp);
+    recordL2(i);
+    expect((await agent.run(m)).outcome).toBe("executed");
+    // a live model is not deterministic: the same signed message now yields a different, equally grounded plan
+    // (a transfer to the token's account instead of a swap), which would have a different action and provenance
+    record(plannerRecordingKey(i, []), { kind: "Transfer", recipient: { literal: "newtoken.testnet" }, token: null, amount: { literal: "0.2 NEAR" } });
+    const again = await agent.run(m);
+    expect(again.outcome).toBe("blocked");
+    expect(again.reasons).toEqual(["duplicate flow_hash"]);
+    expect(contract.spent24h()).toBe(200000000000000000000000n);
+  });
+
   it("allows the same instruction again under a fresh owner message", async () => {
     recordL2("swap 0.2 NEAR into newtoken.testnet");
     await agent.run(signOwnerMessage("swap 0.2 NEAR into newtoken.testnet", [], ownerKp));

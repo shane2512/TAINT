@@ -47,6 +47,19 @@ function grounded(text: string, type: ArgType, instruction: string): boolean {
   return re.test(hay);
 }
 
+const ACCOUNT_CANDIDATE = /(?<![\w.-])(?:[a-z\d_-]+\.)+[a-z_-][a-z\d_-]*(?![\w-])/g;
+const AMOUNT_CANDIDATE = /(?<![\w.])\d+(?:\.\d+)?\s*near(?!\w)/g;
+
+/**
+ * How many distinct values of this role the owner's instruction offers. Grounding shows the owner typed a value,
+ * not which role they meant it for; with more than one candidate a wrong (or fooled) planner could pick the wrong one.
+ */
+function candidates(type: ArgType, instruction: string): number {
+  const hay = squash(instruction);
+  const found = hay.match(type === "amount" ? AMOUNT_CANDIDATE : ACCOUNT_CANDIDATE) ?? [];
+  return new Set(found.map((f) => (type === "amount" ? (parseAmountYocto(f) ?? f) : f))).size;
+}
+
 function resolve(
   r: ArgRef,
   type: ArgType,
@@ -60,7 +73,9 @@ function resolve(
     if (instruction !== undefined && !grounded(type === "amount" ? r.literal : value, type, instruction)) {
       throw new BadArg(`literal for ${type} does not appear in the owner instruction`);
     }
-    return { value, prov: { class: "Owner", source: "owner" }, handleId: null };
+    const ambiguous = instruction !== undefined && candidates(type, instruction) > 1;
+    const prov: Provenance = ambiguous ? { class: "Untrusted", source: "owner-ambiguous" } : { class: "Owner", source: "owner" };
+    return { value, prov, handleId: null };
   }
   let h;
   try {
@@ -96,10 +111,9 @@ export function buildProposal(
       token: token?.prov ?? null,
       amount: amount.prov,
     };
-    const handleIds = { recipient: recipient?.handleId ?? null, token: token?.handleId ?? null, amount: amount.handleId };
-    const flowHash = bs58.encode(
-      createHash("sha256").update(JSON.stringify({ action, prov, handleIds, ownerNonce })).digest(),
-    );
+    // One signed owner message maps to one flow, whatever a (possibly nondeterministic) model plans. If this hashed
+    // the plan, re-submitting the same message could yield a different plan, a new hash, and a second execution.
+    const flowHash = bs58.encode(createHash("sha256").update("taint:flow:" + ownerNonce).digest());
     return { action, prov, flowHash };
   } catch (e) {
     if (e instanceof BadArg) return null;

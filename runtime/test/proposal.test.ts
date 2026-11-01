@@ -41,12 +41,14 @@ describe("buildProposal", () => {
     expect(buildProposal(p, new HandleStore(), "n2")!.flowHash).not.toBe(a);
   });
 
-  it("changes flowHash when the provenance changes but the values do not", () => {
+  it("makes one owner message map to one flowHash whatever the model plans, so a replay is caught even if the model is not deterministic", () => {
     const s = new HandleStore();
     s.add("Account", "alice.near", "x.com/@a");
     const viaHandle: PlannedAction = { kind: "Transfer", recipient: { handle: "$h1" }, amount: { literal: "1 NEAR" }, token: none };
-    const viaLiteral: PlannedAction = { kind: "Transfer", recipient: { literal: "alice.near" }, amount: { literal: "1 NEAR" }, token: none };
-    expect(buildProposal(viaHandle, s, "n")!.flowHash).not.toBe(buildProposal(viaLiteral, s, "n")!.flowHash);
+    const viaLiteral: PlannedAction = { kind: "Transfer", recipient: { literal: "alice.near" }, amount: { literal: "2 NEAR" }, token: none };
+    const a = buildProposal(viaHandle, s, "n")!.flowHash;
+    expect(buildProposal(viaLiteral, new HandleStore(), "n")!.flowHash).toBe(a);
+    expect(buildProposal(viaLiteral, new HandleStore(), "other")!.flowHash).not.toBe(a);
   });
 
   it("returns null for an unparseable literal amount", () => {

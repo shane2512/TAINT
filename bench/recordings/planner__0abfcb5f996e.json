@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "R11",
+  "role": "planner",
+  "key": "planner:0abfcb5f996e",
+  "output": "{\"kind\":\"Transfer\",\"recipient\":{\"literal\":\"alice.testnet\"},\"token\":null,\"amount\":{\"literal\":\"4 NEAR\"}}"
+}

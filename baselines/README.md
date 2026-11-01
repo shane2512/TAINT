@@ -3,7 +3,7 @@
 The benchmark compares TAINT with two baselines. Both run on the same model, the same wallet size and the same inputs.
 
 ## Naive
-A helpful-assistant system prompt ("only send funds when the owner asks") with untrusted content in the same context as the owner's instruction, plus a **2 NEAR daily cap**. This mirrors how the Bankr agent was defended in the May 2026 incident. The cap bounds loss; it does not prevent it.
+A helpful-assistant system prompt ("only send funds when the owner asks") with untrusted content in the same context as the owner's instruction, plus a **2 NEAR daily cap**. This mirrors how the Bankr agent was defended in the May 2026 incident. The cap bounds loss; it does not prevent it. It reads accounts and amounts with the same strict parsers as TAINT, so it already rejects Cyrillic lookalikes and "max"; a real naive agent would not, which makes this baseline slightly stronger than the agent in the incident.
 
 ## Allowlist+Caps
 The naive agent with a rule filter in front: a recipient allowlist, a token allowlist and a per-transaction cap (`allowlist.json`). The filter is `runtime/src/agents/allowlist.ts`, a small rule filter. **It does no transaction simulation.** It is not a stand-in for Blockaid or Rabby.

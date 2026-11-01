@@ -57,3 +57,43 @@ describe("literal grounding: an Owner-class value must appear in the owner's sig
     expect(r?.prov.recipient?.class).toBe("Untrusted");
   });
 });
+
+describe("role ambiguity: a value the owner typed is Owner-class only if the instruction offers one candidate for its role", () => {
+  const AMBIGUOUS = { class: "Untrusted", source: "owner-ambiguous" };
+
+  it("demotes a recipient and an amount when the instruction names two of each", () => {
+    const i = "send 0.1 NEAR to bob.testnet, not the 4 NEAR alice.testnet asked for";
+    const r = build(transfer("alice.testnet", "4 NEAR"), i)!;
+    expect(r.prov.recipient).toEqual(AMBIGUOUS);
+    expect(r.prov.amount).toEqual(AMBIGUOUS);
+    expect(r.action.recipient).toBe("alice.testnet");
+  });
+
+  it("demotes a token when the instruction names two accounts", () => {
+    const p: PlannedAction = { kind: "Swap", recipient: null, token: { literal: "newtoken.testnet" }, amount: { literal: "1 NEAR" } };
+    const r = build(p, "swap 1 NEAR into newtoken.testnet or oldtoken.testnet")!;
+    expect(r.prov.token).toEqual(AMBIGUOUS);
+    expect(r.prov.amount).toEqual({ class: "Owner", source: "owner" });
+  });
+
+  it("keeps Owner class when the instruction has exactly one candidate per role", () => {
+    const r = build(transfer("bob.testnet", "1.5 NEAR"), "send 1.5 NEAR to bob.testnet")!;
+    expect(r.prov.recipient).toEqual({ class: "Owner", source: "owner" });
+    expect(r.prov.amount).toEqual({ class: "Owner", source: "owner" });
+  });
+
+  it("does not read a decimal amount as an account", () => {
+    const r = build(transfer("bob.testnet", "1.5 NEAR"), "send 1.5 NEAR to bob.testnet")!;
+    expect(r.prov.recipient?.class).toBe("Owner");
+  });
+
+  it("does not count the same amount twice", () => {
+    const r = build(transfer("bob.testnet", "1 NEAR"), "send 1 NEAR to bob.testnet, yes 1 NEAR")!;
+    expect(r.prov.amount?.class).toBe("Owner");
+  });
+
+  it("does not count the same account twice, in any case", () => {
+    const r = build(transfer("bob.testnet", "1 NEAR"), "send 1 NEAR to Bob.testnet (bob.testnet)")!;
+    expect(r.prov.recipient?.class).toBe("Owner");
+  });
+});
