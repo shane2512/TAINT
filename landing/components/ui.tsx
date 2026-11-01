@@ -25,13 +25,27 @@ export async function api<T = any>(path: string, body?: unknown): Promise<ApiRes
 }
 
 export interface Preset { id: string; title: string; kind: "attack" | "legit"; instruction: string; attachments: { source: string; text: string }[] }
-export interface Meta { banner: string; network: string; mode: string; presets: Preset[] }
+export interface Meta { banner: string; network: string; mode: string; publicDemo?: boolean; presets: Preset[] }
 
 export function useMeta() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [offline, setOffline] = useState<string | null>(null);
   useEffect(() => {
-    api<Meta>("meta").then((r) => (r.ok ? setMeta(r.body) : setOffline(r.body.error ?? "The runtime did not answer."))).catch(() => setOffline("The runtime did not answer."));
+    let stop = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const attempt = async (n: number) => {
+      try {
+        const r = await api<Meta & { waking?: boolean }>("meta");
+        if (stop) return;
+        if (r.ok) { setMeta(r.body); setOffline(null); return; }
+        setOffline(r.body.error ?? "The runtime did not answer.");
+        if ((r.body as { waking?: boolean }).waking && n < 12) timer = setTimeout(() => attempt(n + 1), 6000);
+      } catch {
+        if (!stop) setOffline("The runtime did not answer.");
+      }
+    };
+    void attempt(0);
+    return () => { stop = true; clearTimeout(timer); };
   }, []);
   return { meta, offline };
 }

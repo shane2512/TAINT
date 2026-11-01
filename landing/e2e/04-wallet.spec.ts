@@ -40,6 +40,10 @@ test.describe("wallet", () => {
   });
 
   test("[F32] the vendor pinned by the L1 preset shows up here", async ({ page }) => {
+    await page.goto("/demo");
+    await page.getByTestId("presets").getByRole("button", { name: /^L1\b/ }).click();
+    await expect(page.getByTestId("pet-taint").locator("[data-outcome]")).toBeVisible();
+    await page.goto("/wallet");
     await expect(page.getByTestId("pins")).toContainText("acme");
   });
 

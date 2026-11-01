@@ -101,6 +101,14 @@ Opt-in: `npm --prefix landing run test:e2e:live` (F58 to F61; needs `.env`, spen
 | F55 | All seven routes fit a phone with no sideways scroll | `globals.css` | 07-shell |
 | F56 | Rob, then co-sign, on a phone | | 07-shell |
 
+## Public demo: separate runtime, free text off
+
+| ID | Feature | Code | Unit tests | Spec |
+|---|---|---|---|---|
+| F62 | Each visitor has a separate wallet, log and held list | `app/api/[...path]/route.ts`, `server.ts` visitors | `server-public.test` | 09-public |
+| F63 | No free-text attack on the public demo, and the API refuses it too | `server.ts` `publicDemo`, `demo/page.tsx` | `server-public.test` | 09-public |
+| F64 | The visitor id is an HttpOnly cookie | `route.ts` | | 09-public |
+
 ## Not covered by a browser test
 
 - **The look of the animations.** F09 and F11 check they run and end correctly. Whether they match the reference video is a judgement by eye.

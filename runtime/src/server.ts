@@ -47,6 +47,21 @@ export interface ServerOptions {
   now?: () => number;
   ownerKp?: KeyPair;
   contract?: MockContract;
+  /** For hosting in public: no free text (it spends a model quota) and nothing but simulated payments. */
+  publicDemo?: boolean;
+  /** Believe the x-client-ip header, set by the site's proxy, when counting attacks per visitor. */
+  trustProxy?: boolean;
+  /** If set, the forwarded address is believed only when the proxy sends this key in x-proxy-key. */
+  proxyKey?: string;
+  /** Visitors kept at once; the least recently seen is dropped. */
+  maxSessions?: number;
+}
+
+/** Everything that belongs to one visitor. */
+interface Visitor {
+  contract: MockContract;
+  taint: TaintAgent;
+  log: LogEntry[];
 }
 
 interface LogEntry {
@@ -82,15 +97,36 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
   if (mode() === "LIVE" && !o.chain && !o.liveModel) {
     throw new Error("LIVE server requires funded test accounts and a live executor (not configured). Run with MOCK=1.");
   }
+  if (o.publicDemo && (o.chain || o.liveModel)) throw new Error("a public demo runs on simulated payments and recorded model answers only");
   const now = o.now ?? Date.now;
   const ownerKp = o.ownerKp ?? KeyPair.fromRandom("ed25519");
-  const contract = o.contract ?? new MockContract(defaultMockConfig(now));
   const common = { ownerPublicKey: ownerKp.getPublicKey().toString(), network: "none" };
-  const taint = new TaintAgent({ client: new MockContractClient(contract), ...common });
   const cfg = loadConfig(baselineConfig);
   const mockCfg = defaultMockConfig(now);
   const hits = new Map<string, number[]>();
-  const log: LogEntry[] = [];
+
+  // One wallet per visitor, keyed by the id the site's proxy keeps in a cookie. Without one, everyone shares "default".
+  const visitors = new Map<string, Visitor>();
+  const maxSessions = o.maxSessions ?? 500;
+  const newVisitor = (c?: MockContract): Visitor => {
+    const contract = c ?? new MockContract(defaultMockConfig(now));
+    return { contract, taint: new TaintAgent({ client: new MockContractClient(contract), ...common }), log: [] };
+  };
+  function visitor(req: http.IncomingMessage): Visitor {
+    const raw = req.headers["x-taint-session"];
+    const id = typeof raw === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(raw) ? raw : "default";
+    let v = visitors.get(id);
+    if (v) visitors.delete(id); // re-insert below, so the map stays in order of last use
+    v ??= newVisitor(id === "default" ? o.contract : undefined);
+    visitors.set(id, v);
+    while (visitors.size > maxSessions) visitors.delete(visitors.keys().next().value!);
+    return v;
+  }
+  const clientId = (req: http.IncomingMessage): string => {
+    const fwd = req.headers["x-client-ip"];
+    const trusted = o.trustProxy && (!o.proxyKey || req.headers["x-proxy-key"] === o.proxyKey);
+    return trusted && typeof fwd === "string" && fwd ? fwd.slice(0, 64) : (req.socket.remoteAddress ?? "?");
+  };
 
   const allowed = (ip: string): boolean => {
     const t = now();
@@ -104,7 +140,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
   };
 
   async function attack(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    if (!allowed(req.socket.remoteAddress ?? "?")) return json(res, 429, { error: "rate limit: 10 attacks per minute" });
+    if (!allowed(clientId(req))) return json(res, 429, { error: `rate limit: ${RATE_LIMIT} attacks per minute` });
+    const { contract, taint, log } = visitor(req);
     let body: any;
     try {
       body = JSON.parse(await readBody(req));
@@ -124,6 +161,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       instruction = f.instruction;
       attachments = f.attachments;
       applySetup(contract, f.setup);
+    } else if (o.publicDemo && typeof body?.text === "string") {
+      return json(res, 403, { error: "free-text attacks are off on the public demo; run the repository locally with a live model" });
     } else if (typeof body?.text === "string" && body.text.length > 0 && body.text.length <= 2000) {
       instruction = "check this for me";
       attachments = [{ source: typeof body.source === "string" ? body.source.slice(0, 80) : "web:rob-page", text: body.text }];
@@ -164,6 +203,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
   }
 
   async function cosign(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const { contract } = visitor(req);
     let body: any;
     try {
       body = JSON.parse(await readBody(req));
@@ -227,7 +267,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     json(res, 200, { decision: "rejected", reasons: [out.Rejected.reason] });
   }
 
-  async function walletView(): Promise<object> {
+  async function walletView(req: http.IncomingMessage): Promise<object> {
+    const { contract } = visitor(req);
     const near = (e: BookEntry) => ({ address: e.address, capNear: formatNear(e.cap.toString()), expiresAt: e.expiresAt, learnedFrom: e.learnedFrom });
     if (o.chain) {
       const [book, pins, spent] = await Promise.all([o.chain.getBook(), o.chain.getPins(), o.chain.getSpent24h()]);
@@ -238,6 +279,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
 
   async function walletWrite(op: string, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     if (o.chain) return json(res, 409, { error: "the wallet is read-only on a real network: owner calls are not exposed here" });
+    const { contract } = visitor(req);
     const b = await jsonBody(req);
     const address = parseAccount(String(b?.address ?? ""));
     if (!address) return json(res, 400, { error: "that is not a NEAR account" });
@@ -248,7 +290,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     } else if (op === "forget") contract.forget(address);
     else if (op === "pin") contract.pin(address);
     else contract.unpin(address);
-    json(res, 200, await walletView());
+    json(res, 200, await walletView(req));
   }
 
   const mockOnly = (res: http.ServerResponse) => json(res, 409, { error: "this suite runs on hand-authored model outputs, so it only runs with MOCK=1" });
@@ -276,7 +318,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       if (req.method === "POST" && url.pathname === "/redteam") return await redteam(res);
       if (req.method === "POST" && url.pathname === "/replay") return await replay(res);
       if (req.method === "POST" && /^\/wallet\/(remember|forget|pin|unpin)$/.test(url.pathname)) return await walletWrite(url.pathname.slice(8), req, res);
-      if (req.method === "GET" && url.pathname === "/wallet") return json(res, 200, await walletView());
+      if (req.method === "GET" && url.pathname === "/wallet") return json(res, 200, await walletView(req));
       if (req.method === "GET" && url.pathname === "/policy/cases") {
         const table = loadTable();
         return json(res, 200, table.cases.map((c) => {
@@ -284,18 +326,20 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
           return { name: c.name, steps: c.steps.length, pass: failures.length === 0, failures };
         }));
       }
-      if (req.method === "GET" && url.pathname === "/log") return json(res, 200, log);
+      if (req.method === "GET" && url.pathname === "/log") return json(res, 200, visitor(req).log);
       if (req.method === "GET" && url.pathname === "/pending" && o.chain) {
         const [held, book] = await Promise.all([o.chain.getPending(), o.chain.getBook()]);
         return json(res, 200, held.map((p) => describePending(p, book.map((b) => b.address))));
       }
       if (req.method === "GET" && url.pathname === "/pending") {
+        const { contract } = visitor(req);
         return json(res, 200, contract.getPending().map((p) => describePending(p, contract.knownCounterparties())));
       }
       if (req.method === "GET" && url.pathname === "/meta") {
         return json(res, 200, {
           banner: o.chain ? `[taint] network=${o.chain.network} real-chain co-sign (demo owner key from .env, not a wallet) ATTESTATION STUBBED` : banner("none"),
           network: o.chain?.network ?? "none",
+          publicDemo: o.publicDemo === true,
           mode: mode(),
           presets: loadFixtures().map((f) => ({ id: f.id, title: f.title, kind: f.kind, instruction: f.instruction, attachments: f.attachments })),
         });
@@ -316,7 +360,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.env.MOCK ??= "1";
   }
   const port = Number(process.env.PORT ?? 3000);
-  createAppServer({ liveModel }).listen(port, "127.0.0.1", () => {
+  const publicDemo = process.env.PUBLIC_DEMO === "1";
+  const host = process.env.HOST ?? "127.0.0.1";
+  createAppServer({ liveModel, publicDemo, trustProxy: process.env.TRUST_PROXY === "1", proxyKey: process.env.PROXY_KEY }).listen(port, host, () => {
     console.log(banner("none"));
     console.log(`TAINT API: http://127.0.0.1:${port}/   The pages are in landing/: npm run site`);
   });

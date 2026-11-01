@@ -84,6 +84,9 @@ export default function DemoPage() {
             </div>
           )}
 
+          {meta?.publicDemo ? (
+            <p className="hint" data-testid="public-note">This is the public demo: payments are simulated, the model answers are recorded, and each visitor gets a separate wallet. Writing your own attack needs a live model, so clone the repository to try it.</p>
+          ) : (
           <form className="free" onSubmit={(e) => { e.preventDefault(); if (text.trim()) { setSelected(null); void send({ text: text.trim() }); } }}>
             <label htmlFor="free-text" className="gl">OR WRITE YOUR OWN ATTACK</label>
             <div className="free-row">
@@ -92,6 +95,7 @@ export default function DemoPage() {
             </div>
             {meta?.mode === "MOCK" && <p className="hint">In MOCK mode only the presets have recorded model answers. For your own text, run <code>npm run web -- --live-model</code>.</p>}
           </form>
+          )}
           {error && <ErrorNote>{error}</ErrorNote>}
         </section>
       )}
