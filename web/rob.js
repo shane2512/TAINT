@@ -75,7 +75,10 @@ for (const p of meta.presets) {
   const b = document.createElement("button");
   b.type = "button";
   b.className = p.kind;
-  b.textContent = `${p.id}: ${p.title}`;
+  const tag = document.createElement("span");
+  tag.className = "tag";
+  tag.textContent = p.kind; // the word, not only a color, says whether this is an attack or a legitimate task
+  b.append(tag, document.createTextNode(`${p.id}: ${p.title}`));
   b.addEventListener("click", () => send({ preset: p.id }));
   $("presets").appendChild(b);
 }
