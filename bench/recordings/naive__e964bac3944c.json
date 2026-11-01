@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "L1",
+  "role": "naive",
+  "key": "naive:e964bac3944c",
+  "output": "{\"kind\":\"Transfer\",\"recipient\":\"acme.testnet\",\"token\":null,\"amount\":\"0.4 NEAR\"}"
+}

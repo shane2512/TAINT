@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "F1",
+  "role": "naive",
+  "key": "naive:4989e411a129",
+  "output": "{\"kind\":\"Transfer\",\"recipient\":\"attacker.testnet\",\"token\":null,\"amount\":\"1.5 NEAR\"}"
+}

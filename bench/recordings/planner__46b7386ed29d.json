@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "L2",
+  "role": "planner",
+  "key": "planner:46b7386ed29d",
+  "output": "{\"kind\":\"Swap\",\"recipient\":null,\"token\":{\"literal\":\"newtoken.testnet\"},\"amount\":{\"literal\":\"0.2 NEAR\"}}"
+}

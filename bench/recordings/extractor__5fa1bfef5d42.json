@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "F3",
+  "role": "extractor",
+  "key": "extractor:5fa1bfef5d42",
+  "output": "{\"accounts\":[],\"tokens\":[\"newtoken.testnet\"],\"amounts\":[]}"
+}

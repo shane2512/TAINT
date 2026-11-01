@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "L1",
+  "role": "planner",
+  "key": "planner:7d13e39e3bd6",
+  "output": "{\"kind\":\"Transfer\",\"recipient\":{\"handle\":\"$h1\"},\"token\":null,\"amount\":{\"handle\":\"$h2\"}}"
+}

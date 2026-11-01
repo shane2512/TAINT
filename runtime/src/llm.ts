@@ -14,7 +14,7 @@ export function mode(): "LIVE" | "MOCK" {
   return process.env.MOCK === "1" ? "MOCK" : "LIVE";
 }
 
-function recordingPath(key: string): string {
+export function recordingPath(key: string): string {
   const dir = process.env.RECORDINGS_DIR ?? path.join(process.cwd(), "bench", "recordings");
   // ':' and other non-portable characters are invalid in Windows filenames.
   return path.join(dir, key.replace(/[^a-zA-Z0-9_.-]/g, "__") + ".json");

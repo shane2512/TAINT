@@ -4,7 +4,9 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "replay": "tsx bench/replay.ts",
+    "gen-recordings": "tsx bench/gen-recordings.ts"
   },
   "dependencies": {
     "@near-js/accounts": "^2.5.1",

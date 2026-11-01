@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "F3",
+  "role": "naive",
+  "key": "naive:e3c4fc09b1e2",
+  "output": "{\"kind\":\"Swap\",\"recipient\":null,\"token\":\"newtoken.testnet\",\"amount\":\"1.5 NEAR\"}"
+}

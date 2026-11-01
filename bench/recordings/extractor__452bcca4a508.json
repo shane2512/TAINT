@@ -1,0 +1,7 @@
+{
+  "source": "hand-authored",
+  "fixture": "L1",
+  "role": "extractor",
+  "key": "extractor:452bcca4a508",
+  "output": "{\"accounts\":[\"acme.testnet\"],\"tokens\":[],\"amounts\":[\"0.4 NEAR\"]}"
+}
