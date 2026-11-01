@@ -8,7 +8,8 @@
     "replay": "tsx bench/replay.ts",
     "gen-recordings": "tsx bench/gen-recordings.ts",
     "redteam": "tsx bench/redteam.ts",
-    "web": "tsx runtime/src/server.ts"
+    "web": "tsx runtime/src/server.ts",
+    "test:contract": "cargo test --workspace --manifest-path contract/Cargo.toml"
   },
   "dependencies": {
     "@near-js/accounts": "^2.5.1",

@@ -26,6 +26,6 @@ Recordings are keyed by the planner's prompt (owner text plus coarse handle summ
 
 - **LIVE drain rate** of the Naive agent on F1 (needs `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`). The README's headline claim, that the naive agent is really drained by the real attack, is unproven until this runs.
 - LIVE red team with real models.
-- `taint.near` in Rust, deployed; TEE attestation decision (`docs/decisions/0001-attestation.md`).
+- `taint.near` and `mockdex` **deployed** to testnet (both are built and tested locally; no NEAR accounts or keys yet); TEE attestation decision (`docs/decisions/0001-attestation.md`).
 - Mainnet co-sign through a NEP-366 delegate action, including the replay-rejection line.
 - L1 settled on mainnet.

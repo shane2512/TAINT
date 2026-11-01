@@ -55,7 +55,7 @@ export class NearContractClient implements ContractClient {
     const res = await this.account.callFunctionRaw({
       contractId: this.contractId,
       methodName: "propose",
-      args: { action, prov, flow_hash: flowHash, facts: null },
+      args: { action, prov, flow_hash: flowHash },
       gas: GAS,
       deposit: 0n,
     });

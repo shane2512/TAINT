@@ -12,7 +12,8 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
 | Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
-| `taint.near` Rust contract | **Not built.** No Rust toolchain on the dev machine yet |
+| `taint.near` Rust contract (`contract/taint`) | **Built and unit-tested, not deployed.** 36 unit tests, plus the shared rule table below, which the TypeScript stand-in also passes |
+| `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done.** Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Not built** (needs funded NEAR accounts). MOCK records approval directly |
 | NEAR Intents payout, mainnet runs | **Not done** |
@@ -40,7 +41,8 @@ Requires Node 20+. No keys, no network.
 
 ```bash
 npm install
-npm test                  # unit tests
+npm test                  # TypeScript unit tests
+npm run test:contract     # Rust contract tests (needs a Rust toolchain; see contract/)
 npm run replay            # three agents x four fixtures (two real-incident attacks, two legitimate tasks); add F2 with --fixtures
 npm run redteam           # ten attacks against a fully fooled model
 npm run web               # http://127.0.0.1:3000/  (Rob the Pet)  and /cosign
@@ -87,6 +89,7 @@ Writing and reviewing these attacks found three real gaps, now fixed: a fooled p
 ```
 runtime/src/   handles, extractor, planner, proposal, owner, mock-contract, agents/, server
 runtime/test/  unit tests
+contract/      Rust: taint (the policy contract) and mockdex (testnet swap stand-in)
 bench/         fixtures, redteam attempts, recordings, replay.ts, redteam.ts, gen-recordings.ts,
                policy-cases.json (the rule table the Rust contract must also pass)
 baselines/     the frozen allowlist config and its README
