@@ -10,6 +10,12 @@ export interface LlmRequest {
   recordingKey: string;
 }
 
+/** Injectable for tests. */
+export interface LlmDeps {
+  client?: { chat: { completions: { create: (args: any) => Promise<any> } } };
+  sleep?: (ms: number) => Promise<void>;
+}
+
 export function mode(): "LIVE" | "MOCK" {
   return process.env.MOCK === "1" ? "MOCK" : "LIVE";
 }
@@ -20,7 +26,18 @@ export function recordingPath(key: string): string {
   return path.join(dir, key.replace(/[^a-zA-Z0-9_.-]/g, "__") + ".json");
 }
 
-export async function complete(req: LlmRequest): Promise<string> {
+const ATTEMPTS = 3;
+const BACKOFF_MS = 1000;
+
+/** Rate limits, server errors, dropped connections, and Groq's occasional strict-schema generation failure. */
+function transient(e: any): boolean {
+  const status: number | undefined = e?.status;
+  if (status === 429 || (status !== undefined && status >= 500)) return true;
+  if (status === 400 && /Failed to generate JSON/i.test(String(e?.message))) return true;
+  return e?.name === "APIConnectionError" || e?.name === "APIConnectionTimeoutError";
+}
+
+export async function complete(req: LlmRequest, deps: LlmDeps = {}): Promise<string> {
   const file = recordingPath(req.recordingKey);
 
   if (mode() === "MOCK") {
@@ -28,8 +45,12 @@ export async function complete(req: LlmRequest): Promise<string> {
     return JSON.parse(fs.readFileSync(file, "utf8")).output as string;
   }
 
-  const client = new OpenAI({ baseURL: process.env.LLM_BASE_URL, apiKey: process.env.LLM_API_KEY });
-  const res = await client.chat.completions.create({
+  // maxRetries 0: this function owns retrying, so a flaky endpoint is never hit more than ATTEMPTS times.
+  const client: NonNullable<LlmDeps["client"]> =
+    deps.client ??
+    (new OpenAI({ baseURL: process.env.LLM_BASE_URL, apiKey: process.env.LLM_API_KEY, maxRetries: 0 }) as unknown as NonNullable<LlmDeps["client"]>);
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const args = {
     model: process.env.LLM_MODEL ?? "",
     messages: [
       { role: "system", content: req.system },
@@ -38,8 +59,19 @@ export async function complete(req: LlmRequest): Promise<string> {
     ...(req.jsonSchema
       ? { response_format: { type: "json_schema", json_schema: { name: "out", schema: req.jsonSchema as Record<string, unknown>, strict: true } } }
       : {}),
-  });
-  const output = res.choices[0]?.message?.content ?? "";
+  };
+
+  let res: any;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      res = await client.chat.completions.create(args);
+      break;
+    } catch (e) {
+      if (attempt >= ATTEMPTS || !transient(e)) throw e;
+      await sleep(BACKOFF_MS * 2 ** (attempt - 1));
+    }
+  }
+  const output: string = res.choices[0]?.message?.content ?? "";
 
   if (process.env.RECORD === "1") {
     fs.mkdirSync(path.dirname(file), { recursive: true });

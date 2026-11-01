@@ -13,10 +13,11 @@ export interface PlannedAction {
 
 const NONE: PlannedAction = { kind: "None", recipient: null, token: null, amount: null };
 
-const SYSTEM =
+export const PLANNER_SYSTEM =
   "Turn the owner's instruction into one action. You see only the owner's text and a list of handles: " +
   "opaque references (id, kind, coarse source) to values read from outside content. Refer to a handle by id. " +
-  "Use a literal only for a value the owner wrote. Never invent values. " +
+  "Use a literal only for a value the owner wrote, and copy it exactly as the owner wrote it " +
+  '(an amount like "0.2 NEAR", an account id like "newtoken.testnet"). Never invent values. ' +
   'Return JSON {"kind":"Transfer"|"Swap"|"None","recipient":ref|null,"token":ref|null,"amount":ref|null} ' +
   'where ref is {"literal":string} or {"handle":string}.';
 
@@ -28,7 +29,7 @@ const REF = {
   ],
 };
 
-const SCHEMA = {
+export const PLANNER_SCHEMA = {
   type: "object",
   properties: {
     kind: { type: "string", enum: ["Transfer", "Swap", "None"] },
@@ -60,9 +61,9 @@ function ref(v: unknown): ArgRef | null | typeof BAD {
 export async function plan(instruction: string, handles: HandleSummary[]): Promise<PlannedAction> {
   const out = await complete({
     role: "planner",
-    system: SYSTEM,
+    system: PLANNER_SYSTEM,
     user: `INSTRUCTION: ${instruction}\nHANDLES: ${JSON.stringify(handles)}`,
-    jsonSchema: SCHEMA,
+    jsonSchema: PLANNER_SCHEMA,
     recordingKey: plannerRecordingKey(instruction, handles),
   });
   let o: Record<string, unknown>;
