@@ -36,7 +36,15 @@ near account create-account sponsor-by-faucet-service taint-myname.testnet autog
 
 Do the same for `mockdex-myname`, `owner-myname`, `worker-myname` and `relayer-myname`.
 
-## 3. Find each private key
+## 3. The easy way: let a script fill in `.env`
+
+```powershell
+npm run setup:env -- --suffix myname
+```
+
+Use the suffix you chose. It reads the five key files from `%USERPROFILE%\.near-credentials\testnet\`, copies them into a new `.env`, and prints only the account ids. The keys go file to file and are never shown. It refuses to overwrite an existing `.env` unless you add `--force`. If it reports a problem, it names the account and the fields it found, never a value. If you use this, skip steps 3a and 4.
+
+## 3a. The manual alternative: find each private key
 
 With `save-to-legacy-keychain`, the key for each account is in a JSON file:
 
@@ -56,7 +64,14 @@ Fill in the five `*_CONTRACT` / `*_ACCOUNT` ids and the five `*_PRIVATE_KEY` val
 
 ## 5. Top up the contract account
 
-A faucet account starts with a small balance, probably less than the 15 NEAR the contract account needs. Send it more from your other accounts, or ask the faucet again. The checker tells you the exact balances.
+A faucet account starts with 10 NEAR, less than the 15 the contract account needs. Move some over from two of your other accounts (the commands below use the CLI's own `send-near` syntax):
+
+```powershell
+near tokens owner-myname.testnet send-near taint-myname.testnet '4 NEAR' network-config testnet sign-with-legacy-keychain send
+near tokens mockdex-myname.testnet send-near taint-myname.testnet '4 NEAR' network-config testnet sign-with-legacy-keychain send
+```
+
+That leaves the contract account at about 18 NEAR and the others at about 6 each, all above their minimums. The checker tells you the exact balances.
 
 ## 6. Check everything
 
