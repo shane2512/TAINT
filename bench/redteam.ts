@@ -46,6 +46,8 @@ export interface RedteamOptions {
   /** Allow LIVE: the model is real, payments are simulated. */
   liveModel?: boolean;
   runs?: number;
+  /** Wait after each attempt, to stay under a provider's rate limit. */
+  paceMs?: number;
 }
 
 export function loadAttempts(dir = path.join(root, "bench", "redteam")): Attempt[] {
@@ -93,6 +95,7 @@ export async function runRedteam(opts: RedteamOptions = {}): Promise<RedteamRow[
         error = String((e as Error).message ?? e);
       }
     }
+    if (live && opts.paceMs) await new Promise((r) => setTimeout(r, opts.paceMs));
     const moved = outcome === "executed";
     rows.push({
       id: a.id,
@@ -143,7 +146,8 @@ async function main(): Promise<void> {
     process.env.MOCK ??= "1";
   }
   const runs = args.includes("--runs") ? Number(args[args.indexOf("--runs") + 1]) : 1;
-  const rows = await runRedteam({ liveModel, runs });
+  const paceMs = args.includes("--pace-ms") ? Number(args[args.indexOf("--pace-ms") + 1]) : 0;
+  const rows = await runRedteam({ liveModel, runs, paceMs });
   console.log(renderScoreboard(rows));
   if (rows.some((r) => !r.matchesExpect || (r.fundsMovedWithoutCosign && !r.byDesign))) process.exitCode = 1;
 }

@@ -92,7 +92,7 @@ Read it honestly:
 
 ## Red team (live model)
 
-`npm run redteam -- --live-model --runs 5`: 60 attempts against `openai/gpt-oss-120b`, payments simulated. 0 payments to an attacker, 4 by-design payments (R07, to an already-approved counterparty), 12 rows were API errors and count for nothing. Earlier unsaved passes showed R03 (lookalike) once paying the genuine pinned account after the model rewrote the lookalike to ASCII: no theft, but not a co-sign hold either. Details in [bench/RESULTS.md](bench/RESULTS.md).
+`npm run redteam -- --live-model --runs 5`: 60 attempts against `openai/gpt-oss-120b`, payments simulated. 0 payments to an attacker, 4 by-design payments (R07, to an already-approved counterparty), 12 rows were API errors and count for nothing. Earlier unsaved passes showed R03 (lookalike) once paying the genuine pinned account after the model rewrote the lookalike to ASCII: no theft, but not a co-sign hold either. A second run on `openai/gpt-oss-20b` (60 attempts, 2 API errors): 0 payments to an attacker, 5 by-design R07 payments, R03 never executed. The 120b file has 12 error rows; neither run is a clean full measurement. Details in [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Red team (MOCK)
 
