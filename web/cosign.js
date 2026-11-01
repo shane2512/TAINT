@@ -19,8 +19,8 @@ async function approve(item, remember, status) {
     body: JSON.stringify({ proposalId: item.proposalId, proposalHash: item.proposalHash, remember }),
   });
   const out = await res.json();
-  status.textContent = res.ok ? "Approved: " + JSON.stringify(out) : "Refused: " + (out.error ?? res.status);
-  if (res.ok) setTimeout(load, 800);
+  status.textContent = res.ok ? "Approved" + (out.explorer ? " on chain: " + out.explorer : ": " + JSON.stringify(out)) : "Refused: " + (out.error ?? res.status);
+  if (res.ok) for (const b of status.parentElement.querySelectorAll("button")) b.disabled = true; // keep the transaction link on screen
 }
 
 function card(item) {
@@ -60,5 +60,5 @@ const meta = await (await fetch("/meta")).json();
 $("banner").textContent = meta.banner;
 $("mode-note").textContent = meta.banner.includes("mode=MOCK")
   ? "MOCK: approval is recorded directly. LIVE uses a NEP-366 delegate action signed in your wallet and submitted by a relayer."
-  : "";
+  : "Real chain: Approve signs one NEP-366 delegate action with the demo owner key held by this server (not your wallet); a relayer submits it and pays the gas.";
 await load();

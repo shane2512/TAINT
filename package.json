@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "test": "vitest run",
+    "cosign-web": "tsx runtime/src/cosign-web.ts",
     "cosign-demo": "tsx bench/cosign-demo.ts",
     "replay": "tsx bench/replay.ts",
     "gen-recordings": "tsx bench/gen-recordings.ts",

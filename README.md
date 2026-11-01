@@ -15,7 +15,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 | `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 57 unit tests, plus the shared 20-case rule table, which the TypeScript stand-in also passes |
 | `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done; decided to stub** ([decision record](docs/decisions/0001-attestation.md)). The spike was not run. Every command prints `ATTESTATION STUBBED` |
-| NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). The web page still uses the MOCK approval, not a wallet-signed delegate. Mainnet not run |
+| NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the co-sign page against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` page still uses the MOCK approval. Mainnet not run |
 | NEAR Intents payout, mainnet runs | **Not done** |
 | Real-model results | **Replay measured once** with `openai/gpt-oss-120b`, 10 runs per fixture, payments simulated (see "Live-model replay" below). Live red team run once (see below) |
 | Mandates and the liquidity/age fact oracle (stretch) | **Not built** |

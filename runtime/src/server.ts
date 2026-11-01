@@ -13,7 +13,7 @@ import type { AgentResult } from "./agents/types";
 import { banner } from "./banner";
 import { describePending } from "./cosign-view";
 import { mode } from "./llm";
-import { MockContract, defaultMockConfig } from "./mock-contract";
+import { MockContract, defaultMockConfig, type BookEntry, type PendingProposal } from "./mock-contract";
 import { MockContractClient } from "./near";
 import { signOwnerMessage } from "./owner";
 import { provenanceLine } from "./provenance";
@@ -28,7 +28,16 @@ const RATE_WINDOW_MS = 60_000;
 const MAX_BODY = 20_000;
 const LOG_SIZE = 100;
 
+/** A real network behind the co-sign page: held proposals are read from the chain and approvals go out as relayed delegates. */
+export interface ChainCosign {
+  network: string;
+  getPending(): Promise<PendingProposal[]>;
+  getBook(): Promise<BookEntry[]>;
+  cosign(proposalId: number, proposalHash: string, remember: boolean): Promise<{ txHash: string; failure?: string }>;
+}
+
 export interface ServerOptions {
+  chain?: ChainCosign;
   now?: () => number;
   ownerKp?: KeyPair;
   contract?: MockContract;
@@ -64,7 +73,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 }
 
 export function createAppServer(o: ServerOptions = {}): http.Server {
-  if (mode() === "LIVE") {
+  if (mode() === "LIVE" && !o.chain) {
     throw new Error("LIVE server requires funded test accounts and a live executor (not configured). Run with MOCK=1.");
   }
   const now = o.now ?? Date.now;
@@ -156,6 +165,12 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       return json(res, 400, { error: "send {proposalId, proposalHash, remember}" });
     }
     try {
+      if (o.chain) {
+        const r = await o.chain.cosign(body.proposalId, body.proposalHash, body.remember === true);
+        if (r.failure) return json(res, 400, { error: "chain refused: " + r.failure, txHash: r.txHash });
+        const host = o.chain.network === "mainnet" ? "" : o.chain.network + ".";
+        return json(res, 200, { txHash: r.txHash, explorer: `https://${host}nearblocks.io/txns/${r.txHash}` });
+      }
       json(res, 200, contract.cosign(body.proposalId, body.proposalHash, body.remember === true));
     } catch (e) {
       json(res, 400, { error: (e as Error).message });
@@ -179,15 +194,19 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
-      if (req.method === "POST" && url.pathname === "/attack") return await attack(req, res);
+      if (req.method === "POST" && url.pathname === "/attack") return o.chain ? json(res, 404, { error: "not found" }) : await attack(req, res);
       if (req.method === "POST" && url.pathname === "/cosign") return await cosign(req, res);
       if (req.method === "GET" && url.pathname === "/log") return json(res, 200, log);
+      if (req.method === "GET" && url.pathname === "/pending" && o.chain) {
+        const [held, book] = await Promise.all([o.chain.getPending(), o.chain.getBook()]);
+        return json(res, 200, held.map((p) => describePending(p, book.map((b) => b.address))));
+      }
       if (req.method === "GET" && url.pathname === "/pending") {
         return json(res, 200, contract.getPending().map((p) => describePending(p, contract.knownCounterparties())));
       }
       if (req.method === "GET" && url.pathname === "/meta") {
         return json(res, 200, {
-          banner: banner("none"),
+          banner: o.chain ? `[taint] network=${o.chain.network} real-chain co-sign (demo owner key from .env, not a wallet) ATTESTATION STUBBED` : banner("none"),
           presets: loadFixtures().map((f) => ({ id: f.id, title: f.title, kind: f.kind })),
         });
       }

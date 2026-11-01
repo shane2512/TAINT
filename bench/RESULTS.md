@@ -94,7 +94,9 @@ Judged live: only whether funds moved without a co-sign outside a by-design case
 | 3. Relayer submits it | Executed, no longer pending ([tx](https://testnet.nearblocks.io/txns/Hob69cKSdDtSXhS7eYYDp3Ds65yE6MXmBRxNAcrmHiAc)) |
 | 4. The same signed delegate submitted again | Rejected: `DelegateActionInvalidNonce` (ak_nonce 275746139000007 = delegate_nonce) ([tx](https://testnet.nearblocks.io/txns/CXDDzMaZVw71CvEKGAUvvF3r6nTHCrjZvCLdwFHcLT7A)) |
 
-The relayer accepts only one `cosign` call, zero deposit, to the TAINT contract, from the owner account; the chain still checks the signature, nonce and expiry (120 blocks). Not done: a browser flow that signs the delegate with a wallet (the demo signs with the owner's key from `.env`), and mainnet.
+The relayer accepts only one `cosign` call, zero deposit, to the TAINT contract, from the owner account; the chain still checks the signature, nonce and expiry (120 blocks). 
+
+**Browser flow** (`npm run cosign-web -- --propose`, testnet only): the co-sign page reads held proposals from the chain and "Approve once" signs and relays the delegate. Run twice in the in-app browser: both approvals executed ([tx](https://testnet.nearblocks.io/txns/CquAtBH2iNFhqcjPQN5aULRoAq35FsjHhG2LNowEYAXg) for the second). The page says it uses a demo owner key held by the local server, **not a wallet**; the process refuses mainnet. Tests: `runtime/test/server-chain.test.ts`. Not done: wallet signing in the browser, and mainnet.
 
 ## Not done (needs credentials or tooling)
 
