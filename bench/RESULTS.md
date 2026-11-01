@@ -33,10 +33,35 @@ Deferred: payment-failure callback, storage-reserve-aware balance check, per-ent
 ### Process finding
 Recordings are keyed by the planner's prompt (owner text plus coarse handle summaries), so two cases with the same prompt cannot record different outputs. A fixture silently overwrote another's recording before the generator learned to refuse that. See `runtime/test/gen-recordings.test.ts`.
 
+## 2026-11-01 testnet deployment and smoke test
+
+Deployed to testnet accounts `taint-myname.testnet` and `mockdex-myname.testnet` (owner `owner-myname.testnet`, worker `worker-myname.testnet`). `new` ran in the same transaction as the deploy and succeeded (the init guard accepted the contract account itself). The contract account keeps its full-access key for now.
+
+Driven through the real TypeScript client as the worker (a throwaway script, not committed), against the real contract:
+
+| Step | Result |
+|---|---|
+| Owner-class transfer of 0.1 NEAR | `Executed`; the recipient's balance rose by exactly 0.1 NEAR |
+| Untrusted recipient | `Pending`, reason `recipient from x.com/@attacker` |
+| Replay of the first flow hash | `Rejected: duplicate flow_hash` |
+| Owner-class swap through `mockdex` | `Executed`; the contract's balance fell by exactly 0.2 NEAR in total (transfer plus swap deposit) |
+| `get_pending` through the client | ids, hash, recipient, source and timestamp all mapped correctly |
+| Owner approves the held proposal with "remember" | `Executed`; the address book learned the recipient (cap 1 NEAR, source `x.com/@attacker`) |
+| Owner approves it a second time | fails: `Smart contract panicked: not pending` |
+| Non-owner calls an owner method | fails: `Smart contract panicked: owner only` |
+
+This is the first time the LIVE client's JSON mapping was checked against a deployed contract.
+
+### Finding, fixed: panic messages were lost on chain
+The first deployment showed every failed call as a bare `WebAssembly trap: unreachable`. near-sdk only compiles its message-carrying panic path for wasm when built with `--cfg near` (cargo-near sets it; a plain `cargo build` does not). Funds were never at risk, since failed calls still reverted, but the error messages were invisible. Fixed by `contract/.cargo/config.toml`, guarded by `runtime/test/contract-build.test.ts`, and verified by redeploying: the messages above now appear.
+
+### Live model: configured, partly checked
+The model is `openai/gpt-oss-120b` on Groq (the only Groq models that enforce strict JSON schemas are gpt-oss-20b and 120b). A live probe with the real schemas showed the model's first answers did not match our strict parsers (a bare `1.5` instead of `1.5 NEAR`, and `NEAR` listed as a token), which would have shown up as the naive agent "doing nothing". The system prompts now spell out the exact formats (`runtime/test/prompts.test.ts`). A throwaway **2-run preview** of the real agents with the live model and simulated execution looked right (naive drained on F1 and F3, TAINT held or never proposed, TAINT completed L1 and L2), but two runs measure nothing. The 10-run measurement is still to do.
+
 ## Not done (needs credentials or tooling)
 
-- **LIVE drain rate** of the Naive agent on F1 (needs `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`). The README's headline claim, that the naive agent is really drained by the real attack, is unproven until this runs.
+- **LIVE drain rate** of the Naive agent on F1 and F3: the model is configured and a 2-run preview looks right, but the replay refuses to run LIVE until a live-model mode exists and the 10-run measurement is made. The README's headline claim is unproven until then.
 - LIVE red team with real models.
-- `taint.near` and `mockdex` **deployed** to testnet (both are built and tested locally; no NEAR accounts or keys yet); TEE attestation decision (`docs/decisions/0001-attestation.md`).
+- TEE attestation decision (`docs/decisions/0001-attestation.md`); the contracts are deployed to testnet but the worker is a plain key, not a TEE-attested one.
 - Mainnet co-sign through a NEP-366 delegate action, including the replay-rejection line.
 - L1 settled on mainnet.

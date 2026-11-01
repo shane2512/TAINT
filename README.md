@@ -12,7 +12,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
 | Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
-| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested and reviewed, not deployed.** 57 unit tests, plus the shared 20-case rule table, which the TypeScript stand-in also passes |
+| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 57 unit tests, plus the shared 20-case rule table, which the TypeScript stand-in also passes |
 | `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done.** Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Not built** (needs funded NEAR accounts). MOCK records approval directly |
@@ -89,6 +89,7 @@ Deploying it:
 - Call `new` in the **same batch as the deploy**. It refuses any caller but the contract account, so nobody can front-run it and become the owner.
 - Deleting the contract account's full-access key makes it permanent. There is **no code upgrade path**, so a bug is then permanent too. Keep a full-access key until you have verified the deployment, and delete it only for the final claim.
 - The owner is an *account*, so rotate the owner's keys at the account level if they leak. There is no `set_owner`.
+- Build the wasm with the committed `contract/.cargo/config.toml` (it sets `--cfg near`) or with `cargo near build`. A plain build without that flag turns every contract panic into a bare "unreachable" trap, hiding messages like `owner only`.
 - Held proposals expire after 15 minutes and are deleted after 24 hours. At most 100 can be pending, and a provenance source label is limited to 128 bytes.
 
 Known limits:

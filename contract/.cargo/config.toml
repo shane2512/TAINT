@@ -1,0 +1,4 @@
+# near-sdk compiles its message-carrying panic path for wasm only with `--cfg near` (cargo-near sets it for you).
+# Without it every contract panic reaches the chain as a bare "unreachable" trap. See runtime/test/contract-build.test.ts.
+[target.wasm32-unknown-unknown]
+rustflags = ["--cfg", "near"]
