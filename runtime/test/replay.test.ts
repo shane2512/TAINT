@@ -65,9 +65,9 @@ describe("replay (MOCK)", () => {
     expect(table).toContain("drained 3/3");
   });
 
-  it("refuses to run LIVE until a live executor exists", async () => {
+  it("refuses to run LIVE unless --live-model was asked for", async () => {
     delete process.env.MOCK;
-    await expect(runReplay(["F1"], 1)).rejects.toThrow(/LIVE replay requires/);
+    await expect(runReplay(["F1"], 1)).rejects.toThrow(/--live-model/);
   });
 });
 

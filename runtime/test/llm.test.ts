@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { complete, mode } from "../src/llm";
+import { complete, mode, setLlmTap } from "../src/llm";
 
 let dir: string;
 beforeEach(() => {
@@ -101,6 +101,30 @@ describe("llm client", () => {
       expect(m.calls()).toBe(3);
     });
 
+    it("waits at least as long as the server's Retry-After asks", async () => {
+      live();
+      const waits: number[] = [];
+      const m = make(Object.assign(err(429, "slow down"), { headers: { "retry-after": "3" } }), "ok");
+      await complete(req("k"), { client: m.client as any, sleep: async (ms) => void waits.push(ms) });
+      expect(waits).toEqual([3000]);
+    });
+
+    it("reads Retry-After from a Headers object too, and caps it at 30 seconds", async () => {
+      live();
+      const waits: number[] = [];
+      const m = make(Object.assign(err(429, "slow down"), { headers: new Headers({ "retry-after": "999" }) }), "ok");
+      await complete(req("k"), { client: m.client as any, sleep: async (ms) => void waits.push(ms) });
+      expect(waits).toEqual([30_000]);
+    });
+
+    it("ignores a Retry-After it cannot read", async () => {
+      live();
+      const waits: number[] = [];
+      const m = make(Object.assign(err(429, "slow down"), { headers: { "retry-after": "soon" } }), "ok");
+      await complete(req("k"), { client: m.client as any, sleep: async (ms) => void waits.push(ms) });
+      expect(waits).toEqual([1000]);
+    });
+
     it("waits longer between each attempt", async () => {
       live();
       const waits: number[] = [];
@@ -108,6 +132,47 @@ describe("llm client", () => {
       await complete(req("k"), { client: m.client as any, sleep: async (ms) => void waits.push(ms) });
       expect(waits).toHaveLength(2);
       expect(waits[1]).toBeGreaterThan(waits[0]);
+    });
+  });
+
+  describe("the output tap", () => {
+    afterEach(() => setLlmTap(undefined));
+
+    it("reports each answer with its role and recording key (MOCK)", async () => {
+      fs.writeFileSync(path.join(dir, "k2.json"), JSON.stringify({ output: "hello" }));
+      const seen: unknown[] = [];
+      setLlmTap((e) => seen.push(e));
+      await complete(req("k2"));
+      expect(seen).toEqual([{ role: "planner", key: "k2", output: "hello" }]);
+    });
+
+    it("reports a live answer once, not the failed attempts before it", async () => {
+      delete process.env.MOCK;
+      let calls = 0;
+      const client = {
+        chat: {
+          completions: {
+            create: async () => {
+              if (calls++ === 0) throw Object.assign(new Error("rate limited"), { status: 429 });
+              return { choices: [{ message: { content: "live answer" } }] };
+            },
+          },
+        },
+      };
+      const seen: any[] = [];
+      setLlmTap((e) => seen.push(e));
+      await complete(req("k3"), { client: client as any, sleep: async () => {} });
+      expect(seen).toHaveLength(1);
+      expect(seen[0].output).toBe("live answer");
+    });
+
+    it("stops reporting once it is cleared", async () => {
+      fs.writeFileSync(path.join(dir, "k4.json"), JSON.stringify({ output: "x" }));
+      const seen: unknown[] = [];
+      setLlmTap((e) => seen.push(e));
+      setLlmTap(undefined);
+      await complete(req("k4"));
+      expect(seen).toEqual([]);
     });
   });
 

@@ -16,6 +16,19 @@ export interface LlmDeps {
   sleep?: (ms: number) => Promise<void>;
 }
 
+export interface LlmEvent {
+  role: LlmRequest["role"];
+  key: string;
+  output: string;
+}
+
+let tap: ((e: LlmEvent) => void) | undefined;
+
+/** Observe every answer `complete` returns (recording or live). The replay uses it to keep raw model outputs. */
+export function setLlmTap(fn: ((e: LlmEvent) => void) | undefined): void {
+  tap = fn;
+}
+
 export function mode(): "LIVE" | "MOCK" {
   return process.env.MOCK === "1" ? "MOCK" : "LIVE";
 }
@@ -37,12 +50,24 @@ function transient(e: any): boolean {
   return e?.name === "APIConnectionError" || e?.name === "APIConnectionTimeoutError";
 }
 
+const MAX_RETRY_AFTER_MS = 30_000;
+
+/** The server's Retry-After (seconds), if it sent a readable one; 0 otherwise. Capped so a bad header cannot stall a run. */
+function retryAfterMs(e: any): number {
+  const h = e?.headers;
+  const raw = typeof h?.get === "function" ? h.get("retry-after") : h?.["retry-after"];
+  const secs = Number(raw);
+  return Number.isFinite(secs) && secs > 0 ? Math.min(secs * 1000, MAX_RETRY_AFTER_MS) : 0;
+}
+
 export async function complete(req: LlmRequest, deps: LlmDeps = {}): Promise<string> {
   const file = recordingPath(req.recordingKey);
 
   if (mode() === "MOCK") {
     if (!fs.existsSync(file)) throw new Error(`no recording for key ${req.recordingKey} (${file})`);
-    return JSON.parse(fs.readFileSync(file, "utf8")).output as string;
+    const output = JSON.parse(fs.readFileSync(file, "utf8")).output as string;
+    tap?.({ role: req.role, key: req.recordingKey, output });
+    return output;
   }
 
   // maxRetries 0: this function owns retrying, so a flaky endpoint is never hit more than ATTEMPTS times.
@@ -68,10 +93,11 @@ export async function complete(req: LlmRequest, deps: LlmDeps = {}): Promise<str
       break;
     } catch (e) {
       if (attempt >= ATTEMPTS || !transient(e)) throw e;
-      await sleep(BACKOFF_MS * 2 ** (attempt - 1));
+      await sleep(Math.max(BACKOFF_MS * 2 ** (attempt - 1), retryAfterMs(e)));
     }
   }
   const output: string = res.choices[0]?.message?.content ?? "";
+  tap?.({ role: req.role, key: req.recordingKey, output });
 
   if (process.env.RECORD === "1") {
     fs.mkdirSync(path.dirname(file), { recursive: true });

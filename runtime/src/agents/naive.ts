@@ -39,6 +39,8 @@ export interface NaiveOptions {
   network: string;
   dailyCap?: bigint;
   now?: () => number;
+  /** Share one model decision per signed message (keyed by nonce) between agents, so a benchmark compares the same decision. */
+  decisions?: Map<string, Promise<ProposedAction | null>>;
 }
 
 export class NaiveAgent implements Agent {
@@ -54,7 +56,15 @@ export class NaiveAgent implements Agent {
     return null;
   }
 
-  private async decide(msg: SignedOwnerMessage): Promise<ProposedAction | null> {
+  private decide(msg: SignedOwnerMessage): Promise<ProposedAction | null> {
+    const cache = this.o.decisions;
+    if (!cache) return this.ask(msg);
+    let p = cache.get(msg.nonce);
+    if (!p) cache.set(msg.nonce, (p = this.ask(msg)));
+    return p;
+  }
+
+  private async ask(msg: SignedOwnerMessage): Promise<ProposedAction | null> {
     const content = msg.attachments.map((a) => `[${a.source}]\n${a.text}`).join("\n\n");
     const out = await complete({
       role: "naive",
