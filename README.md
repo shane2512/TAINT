@@ -11,7 +11,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 | Piece | State |
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
-| Policy rules (PRD section 7) | Built as a **TypeScript simulator** (`runtime/src/mock-contract.ts`) |
+| Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
 | `taint.near` Rust contract | **Not built.** No Rust toolchain on the dev machine yet |
 | TEE (Shade Agent) attestation | **Not done.** Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Not built** (needs funded NEAR accounts). MOCK records approval directly |
