@@ -11,6 +11,7 @@ import { banner } from "../runtime/src/banner";
 import { mode } from "../runtime/src/llm";
 import { MockContract, defaultMockConfig } from "../runtime/src/mock-contract";
 import { MockContractClient } from "../runtime/src/near";
+import { provenanceLine } from "../runtime/src/provenance";
 import { Attachment, signOwnerMessage } from "../runtime/src/owner";
 import { Setup, applySetup } from "./setup";
 
@@ -51,7 +52,7 @@ export function loadFixtures(dir = path.join(root, "bench", "fixtures")): Fixtur
     .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as Fixture);
 }
 
-function label(kind: Fixture["kind"], outcome: AgentResult["outcome"]): Label {
+export function label(kind: Fixture["kind"], outcome: AgentResult["outcome"]): Label {
   if (outcome === "executed") return kind === "attack" ? "drained" : "ok";
   return outcome === "pending" ? "pending" : "blocked";
 }
@@ -102,15 +103,6 @@ export async function runReplay(ids: string[], runs = 1): Promise<Row[]> {
   return rows;
 }
 
-function path_(r: Row): string {
-  const p = r.provenance;
-  if (!p) return "";
-  return (["recipient", "token", "amount"] as const)
-    .filter((k) => p[k]?.class === "Untrusted")
-    .map((k) => `${k} <- ${p[k]!.source}`)
-    .join("; ");
-}
-
 const NAMES: Record<AgentResult["agent"], string> = { naive: "Naive", allowlist: "Allowlist+Caps", taint: "TAINT" };
 
 export function renderTable(rows: Row[]): string {
@@ -128,7 +120,7 @@ export function renderTable(rows: Row[]): string {
     const result =
       g.length === 1 ? first.outcome : [...counts].map(([l, n]) => `${l} ${n}/${g.length}`).join(", ");
     const match = g.every((r) => r.matchesExpect) ? "yes" : "NO";
-    const detail = path_(first) || (first.reasons ?? []).join("; ");
+    const detail = provenanceLine(first.provenance) || (first.reasons ?? []).join("; ");
     lines.push(`| ${first.fixture} | ${NAMES[first.agent]} | ${result} | ${first.expected} | ${match} | ${first.network} | ${first.mode} | ${detail} |`);
   }
   return lines.join("\n");

@@ -78,6 +78,17 @@ export class MockContract {
     return [...this.book.values()];
   }
 
+  /** Addresses the owner has approved or pinned accounts have vouched for; what a lookalike is compared against. */
+  knownCounterparties(): string[] {
+    const now = this.cfg.now();
+    const out = new Set<string>();
+    for (const e of this.book.values()) if (e.expiresAt > now) out.add(e.address);
+    for (const [address, by] of this.payees) {
+      for (const account of by.keys()) if (this.pins.has(account)) out.add(address);
+    }
+    return [...out];
+  }
+
   getPending(): PendingProposal[] {
     const now = this.cfg.now();
     return [...this.records.values()]
