@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { Clock, GlyphOpts, drawFlow, drawGlyphs, RAMPS } from "./ascii";
+import { Clock, GlyphOpts, drawFlow, drawGlyphs } from "./ascii";
 
 // Runs `draw` at ~30fps while the canvas is on screen.
 function useLoop(ref: React.RefObject<HTMLCanvasElement | null>, draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void, fps = 30) {
@@ -52,21 +52,17 @@ export function GlyphCanvas({ clock, opts, className, follow }: { clock: Clock; 
   return <canvas ref={ref} className={className} aria-hidden="true" />;
 }
 
-export function FlowCanvas({ clock, gate = true, className }: { clock: Clock; gate?: boolean; className?: string }) {
+export function FlowCanvas({ clock, className }: { clock: Clock; className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const g = useRef(gate); g.current = gate;
+  const off = useRef<HTMLCanvasElement | null>(null);
   useLoop(ref, (ctx, w, h) => {
     const s = 3; // pixel scale
     const cw = Math.ceil(w / s), ch = Math.ceil(h / s);
-    const cv = ctx.canvas;
-    const off = (FlowCanvas as unknown as { _o?: HTMLCanvasElement })._o ?? ((FlowCanvas as unknown as { _o?: HTMLCanvasElement })._o = document.createElement("canvas"));
-    if (off.width !== cw || off.height !== ch) { off.width = cw; off.height = ch; }
-    const octx = off.getContext("2d")!;
-    drawFlow(octx, cw, ch, clock.t, s, g.current);
+    const small = (off.current ??= document.createElement("canvas"));
+    if (small.width !== cw || small.height !== ch) { small.width = cw; small.height = ch; }
+    drawFlow(small.getContext("2d")!, cw, ch, clock.t, s);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(off, 0, 0, cw, ch, 0, 0, cv.width, cv.height);
+    ctx.drawImage(small, 0, 0, cw, ch, 0, 0, w, h);
   });
   return <canvas ref={ref} className={className} aria-hidden="true" />;
 }
-
-export { RAMPS };

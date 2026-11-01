@@ -4,26 +4,28 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { KeyPair } from "@near-js/crypto";
 import { applySetup } from "../../bench/setup";
-import { label, loadFixtures } from "../../bench/replay";
+import { loadTable, runCase } from "../../bench/policy-runner";
+import { runRedteam } from "../../bench/redteam";
+import { label, loadFixtures, runReplay } from "../../bench/replay";
 import { AllowlistCapsAgent, loadConfig } from "./agents/allowlist";
 import { MockExecutor } from "./agents/executor";
 import { NaiveAgent } from "./agents/naive";
 import { TaintAgent } from "./agents/taint";
 import type { AgentResult } from "./agents/types";
 import { banner } from "./banner";
-import { describePending } from "./cosign-view";
+import { describePending, formatNear } from "./cosign-view";
+import { parseAccount, parseAmountYocto } from "./handles";
 import { mode } from "./llm";
 import { MockContract, defaultMockConfig, type BookEntry, type PendingProposal } from "./mock-contract";
 import { MockContractClient } from "./near";
 import { signOwnerMessage } from "./owner";
+import type { ArgProvenance, Provenance, ProposedAction } from "./proposal";
 import { provenanceLine } from "./provenance";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const webDir = path.resolve(here, "../../web");
 const baselineConfig = path.resolve(here, "../../baselines/allowlist.json");
 
-const MIME: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
-const RATE_LIMIT = 10;
+const RATE_LIMIT = Number(process.env.ATTACK_RATE_LIMIT ?? 10);
 const RATE_WINDOW_MS = 60_000;
 const MAX_BODY = 20_000;
 const LOG_SIZE = 100;
@@ -33,11 +35,15 @@ export interface ChainCosign {
   network: string;
   getPending(): Promise<PendingProposal[]>;
   getBook(): Promise<BookEntry[]>;
+  getPins(): Promise<string[]>;
+  getSpent24h(): Promise<string>;
   cosign(proposalId: number, proposalHash: string, remember: boolean): Promise<{ txHash: string; failure?: string }>;
 }
 
 export interface ServerOptions {
   chain?: ChainCosign;
+  /** A real model with simulated payments, so free-text attacks work. Nothing touches a chain. */
+  liveModel?: boolean;
   now?: () => number;
   ownerKp?: KeyPair;
   contract?: MockContract;
@@ -73,7 +79,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 }
 
 export function createAppServer(o: ServerOptions = {}): http.Server {
-  if (mode() === "LIVE" && !o.chain) {
+  if (mode() === "LIVE" && !o.chain && !o.liveModel) {
     throw new Error("LIVE server requires funded test accounts and a live executor (not configured). Run with MOCK=1.");
   }
   const now = o.now ?? Date.now;
@@ -82,6 +88,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
   const common = { ownerPublicKey: ownerKp.getPublicKey().toString(), network: "none" };
   const taint = new TaintAgent({ client: new MockContractClient(contract), ...common });
   const cfg = loadConfig(baselineConfig);
+  const mockCfg = defaultMockConfig(now);
   const hits = new Map<string, number[]>();
   const log: LogEntry[] = [];
 
@@ -127,8 +134,10 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     const msg = signOwnerMessage(instruction, attachments, ownerKp);
     let results: AgentResult[];
     try {
-      const naive = new NaiveAgent({ ...common, executor: new MockExecutor(), now });
-      const allowlist = new AllowlistCapsAgent({ ...common, executor: new MockExecutor(), now }, cfg);
+      // One model decision, judged by both baselines; otherwise two live calls could disagree.
+      const decisions = new Map<string, Promise<ProposedAction | null>>();
+      const naive = new NaiveAgent({ ...common, executor: new MockExecutor(), now, decisions });
+      const allowlist = new AllowlistCapsAgent({ ...common, executor: new MockExecutor(), now, decisions }, cfg);
       results = [await naive.run(msg), await allowlist.run(msg), await taint.run(msg)];
     } catch (e) {
       if (/no recording for key/.test(String((e as Error).message))) {
@@ -177,18 +186,85 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     }
   }
 
-  function serveStatic(urlPath: string, res: http.ServerResponse): void {
-    let name: string;
+  async function jsonBody(req: http.IncomingMessage): Promise<any> {
     try {
-      name = urlPath === "/" ? "index.html" : urlPath === "/cosign" ? "cosign.html" : decodeURIComponent(urlPath.slice(1));
+      return JSON.parse(await readBody(req));
     } catch {
-      return json(res, 404, { error: "not found" });
+      return null;
     }
-    if (!/^[a-zA-Z0-9_-]+\.(html|js|css)$/.test(name)) return json(res, 404, { error: "not found" });
-    const file = path.join(webDir, name);
-    if (!fs.existsSync(file)) return json(res, 404, { error: "not found" });
-    res.writeHead(200, { "content-type": MIME[path.extname(name)] });
-    res.end(fs.readFileSync(file));
+  }
+
+  /** Runs one proposal through the real rules, on a fresh contract, so nothing here touches the wallet's state. */
+  async function policyEvaluate(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const b = await jsonBody(req);
+    const bad = (error: string) => json(res, 400, { error });
+    if (b?.kind !== "Transfer" && b?.kind !== "Swap") return bad("kind must be Transfer or Swap");
+    const amount = parseAmountYocto(`${b.amountNear} NEAR`);
+    if (!amount) return bad("amountNear must be a NEAR amount");
+    const target = parseAccount(String(b.kind === "Transfer" ? b.recipient : b.token));
+    if (!target) return bad(`${b.kind === "Transfer" ? "recipient" : "token"} must be a NEAR account`);
+    const source = (v: unknown): Provenance => {
+      const s = typeof v === "string" && v.trim() ? v.trim().slice(0, 128) : "owner";
+      return s === "owner" ? { class: "Owner", source: "owner" } : { class: "Untrusted", source: s };
+    };
+    const c = new MockContract(defaultMockConfig(now));
+    if (b.spentNear) {
+      const spent = parseAmountYocto(`${b.spentNear} NEAR`);
+      if (!spent) return bad("spentNear must be a NEAR amount");
+      const owner: Provenance = { class: "Owner", source: "owner" };
+      c.propose({ kind: "Transfer", recipient: "spent.testnet", token: null, amount: spent }, { recipient: owner, token: null, amount: owner }, "spent");
+    }
+    if (b.remembered) c.remember(target);
+    if (b.pinnedPayee) {
+      c.pin("pinned.testnet");
+      c.registerPayee("pinned.testnet", target);
+    }
+    const action: ProposedAction = { kind: b.kind, recipient: b.kind === "Transfer" ? target : null, token: b.kind === "Swap" ? target : null, amount };
+    const prov: ArgProvenance = { recipient: b.kind === "Transfer" ? source(b.recipientSource) : null, token: b.kind === "Swap" ? source(b.tokenSource) : null, amount: source(b.amountSource) };
+    const out = c.propose(action, prov, "evaluate");
+    if ("Executed" in out) return json(res, 200, { decision: "executed", reasons: [] });
+    if ("Pending" in out) return json(res, 200, { decision: "held", reasons: out.Pending.reasons });
+    json(res, 200, { decision: "rejected", reasons: [out.Rejected.reason] });
+  }
+
+  async function walletView(): Promise<object> {
+    const near = (e: BookEntry) => ({ address: e.address, capNear: formatNear(e.cap.toString()), expiresAt: e.expiresAt, learnedFrom: e.learnedFrom });
+    if (o.chain) {
+      const [book, pins, spent] = await Promise.all([o.chain.getBook(), o.chain.getPins(), o.chain.getSpent24h()]);
+      return { network: o.chain.network, writable: false, book: book.map(near), pins, spent24hNear: formatNear(spent), globalCapNear: null };
+    }
+    return { network: "none", writable: true, book: contract.getBook().map(near), pins: contract.getPins(), spent24hNear: formatNear(contract.spent24h().toString()), globalCapNear: formatNear(mockCfg.globalCap24h.toString()) };
+  }
+
+  async function walletWrite(op: string, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    if (o.chain) return json(res, 409, { error: "the wallet is read-only on a real network: owner calls are not exposed here" });
+    const b = await jsonBody(req);
+    const address = parseAccount(String(b?.address ?? ""));
+    if (!address) return json(res, 400, { error: "that is not a NEAR account" });
+    if (op === "remember") {
+      const cap = b.capNear ? parseAmountYocto(`${b.capNear} NEAR`) : undefined;
+      if (cap === null) return json(res, 400, { error: "the cap must be a NEAR amount" });
+      contract.remember(address, cap ? BigInt(cap) : undefined);
+    } else if (op === "forget") contract.forget(address);
+    else if (op === "pin") contract.pin(address);
+    else contract.unpin(address);
+    json(res, 200, await walletView());
+  }
+
+  const mockOnly = (res: http.ServerResponse) => json(res, 409, { error: "this suite runs on hand-authored model outputs, so it only runs with MOCK=1" });
+
+  async function redteam(res: http.ServerResponse): Promise<void> {
+    if (o.chain || mode() !== "MOCK") return mockOnly(res);
+    const rows = await runRedteam();
+    const moved = rows.filter((r) => r.fundsMovedWithoutCosign);
+    const byDesign = moved.filter((r) => r.byDesign).length;
+    json(res, 200, { rows, summary: { attempts: rows.length, held: rows.length - moved.length, byDesign, failures: moved.length - byDesign, unexpected: rows.filter((r) => !r.matchesExpect).length } });
+  }
+
+  async function replay(res: http.ServerResponse): Promise<void> {
+    if (o.chain || mode() !== "MOCK") return mockOnly(res);
+    const rows = await runReplay(loadFixtures().map((f) => f.id));
+    json(res, 200, { rows: rows.map((r) => ({ fixture: r.fixture, agent: r.agent, outcome: r.outcome, expected: r.expected, matchesExpect: r.matchesExpect, reasons: r.reasons })) });
   }
 
   return http.createServer(async (req, res) => {
@@ -196,6 +272,18 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       const url = new URL(req.url ?? "/", "http://localhost");
       if (req.method === "POST" && url.pathname === "/attack") return o.chain ? json(res, 404, { error: "not found" }) : await attack(req, res);
       if (req.method === "POST" && url.pathname === "/cosign") return await cosign(req, res);
+      if (req.method === "POST" && url.pathname === "/policy/evaluate") return await policyEvaluate(req, res);
+      if (req.method === "POST" && url.pathname === "/redteam") return await redteam(res);
+      if (req.method === "POST" && url.pathname === "/replay") return await replay(res);
+      if (req.method === "POST" && /^\/wallet\/(remember|forget|pin|unpin)$/.test(url.pathname)) return await walletWrite(url.pathname.slice(8), req, res);
+      if (req.method === "GET" && url.pathname === "/wallet") return json(res, 200, await walletView());
+      if (req.method === "GET" && url.pathname === "/policy/cases") {
+        const table = loadTable();
+        return json(res, 200, table.cases.map((c) => {
+          const failures = runCase(c.steps, table.config);
+          return { name: c.name, steps: c.steps.length, pass: failures.length === 0, failures };
+        }));
+      }
       if (req.method === "GET" && url.pathname === "/log") return json(res, 200, log);
       if (req.method === "GET" && url.pathname === "/pending" && o.chain) {
         const [held, book] = await Promise.all([o.chain.getPending(), o.chain.getBook()]);
@@ -207,11 +295,12 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       if (req.method === "GET" && url.pathname === "/meta") {
         return json(res, 200, {
           banner: o.chain ? `[taint] network=${o.chain.network} real-chain co-sign (demo owner key from .env, not a wallet) ATTESTATION STUBBED` : banner("none"),
-          presets: loadFixtures().map((f) => ({ id: f.id, title: f.title, kind: f.kind })),
+          network: o.chain?.network ?? "none",
+          mode: mode(),
+          presets: loadFixtures().map((f) => ({ id: f.id, title: f.title, kind: f.kind, instruction: f.instruction, attachments: f.attachments })),
         });
       }
-      if (req.method === "GET") return serveStatic(url.pathname, res);
-      json(res, 405, { error: "method not allowed" });
+      json(res, req.method === "GET" ? 404 : 405, { error: req.method === "GET" ? "not found" : "method not allowed" });
     } catch (e) {
       json(res, 500, { error: String((e as Error).message ?? e) });
     }
@@ -219,10 +308,16 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.env.MOCK ??= "1";
+  const liveModel = process.argv.includes("--live-model");
+  if (liveModel) {
+    if (fs.existsSync(".env")) process.loadEnvFile(".env");
+    delete process.env.MOCK;
+  } else {
+    process.env.MOCK ??= "1";
+  }
   const port = Number(process.env.PORT ?? 3000);
-  createAppServer().listen(port, "127.0.0.1", () => {
+  createAppServer({ liveModel }).listen(port, "127.0.0.1", () => {
     console.log(banner("none"));
-    console.log(`Rob the Pet: http://127.0.0.1:${port}/   Co-sign: http://127.0.0.1:${port}/cosign`);
+    console.log(`TAINT API: http://127.0.0.1:${port}/   The pages are in landing/: npm run site`);
   });
 }

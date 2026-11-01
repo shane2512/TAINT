@@ -17,7 +17,7 @@ Everything here is from **MOCK** runs with **hand-authored model outputs** unles
 - **Role confusion.** Grounding proved the owner typed a value, not which role they meant it for. With two accounts or two amounts in the instruction, a wrong planner could pick the wrong one and it executed with no co-sign. Now demoted to untrusted (`owner-ambiguous`) and held. Tests: `proposal-grounding.test.ts`; red-team R11.
 - **Replay depended on a deterministic model.** The flow hash covered the plan, so a live model re-planning the same signed message could yield a new hash and a second execution. The hash now derives only from the owner's nonce. Test: `taint-agent.test.ts` "blocks a replay even when the model plans something different the second time" (my first draft passed for the wrong reason and was corrected to fail first).
 - **Text typed into the instruction itself** was untested and unstated. Added R12 (executes by design) and a README line.
-- **Rule precision for the Rust port.** `bench/policy-cases.json` is now the shared rule table (20 cases after the contract review). Three rules came out of writing it: an amount must be 1..=u128 max; approve-and-remember never lowers an existing live entry; the rest pin down existing behaviour (window edge, flow_hash burn, pending TTL edge, payee cooldown restart).
+- **Rule precision for the Rust port.** `bench/policy-cases.json` is now the shared rule table (19 cases after the contract review). Three rules came out of writing it: an amount must be 1..=u128 max; approve-and-remember never lowers an existing live entry; the rest pin down existing behaviour (window edge, flow_hash burn, pending TTL edge, payee cooldown restart).
 
 ### Findings from the contract review, fixed
 A fresh reviewer read the Rust contract and judged it **not ready to deploy**. Fixed, each with a failing test first:
@@ -97,6 +97,18 @@ Judged live: only whether funds moved without a co-sign outside a by-design case
 The relayer accepts only one `cosign` call, zero deposit, to the TAINT contract, from the owner account; the chain still checks the signature, nonce and expiry (120 blocks). 
 
 **Browser flow** (`npm run cosign-web -- --propose`, testnet only): the co-sign page reads held proposals from the chain and "Approve once" signs and relays the delegate. Run twice in the in-app browser: both approvals executed ([tx](https://testnet.nearblocks.io/txns/CquAtBH2iNFhqcjPQN5aULRoAq35FsjHhG2LNowEYAXg) for the second). The page says it uses a demo owner key held by the local server, **not a wallet**; the process refuses mainnet. Tests: `runtime/test/server-chain.test.ts`. Not done: wallet signing in the browser, and mainnet.
+
+## 2026-11-02 Site and end-to-end tests
+
+The site moved to `landing/` (Next.js); the runtime is now only an API, and `web/` is gone. Every feature is mapped to a browser test in `docs/E2E-MAP.md`; run with `npm run test:e2e`.
+
+Run once on 2026-11-02: 78 of 78 in the MOCK suite (real browser, production build, no chain). 4 of 4 in the opt-in live suite: a real held proposal approved from the page through the relayer on testnet ([tx](https://testnet.nearblocks.io/txns/FDaFAyXL6fvwxUMdktn37Mbqdf9FT53N4sGQtAHPhFwJ)), and one free-text attack through a live model (`openai/gpt-oss-120b`), which is one run and measures nothing beyond that the path works.
+
+Findings while building it, fixed:
+- **The docs said 20 shared policy cases; the file has 19.** Corrected, and the site reads the count from the file.
+- **The first landing page stated things that were wrong:** held proposals expire after 15 minutes (it said 24 hours), and pinning covers payees an account registers, capped at 0.5 NEAR for 24 hours (it said pinned accounts count as owner-class).
+- **The old co-sign page called a capped refusal "Approved".** The mock contract answers a global-cap refusal with status 200 and `{Rejected}`; the page now shows it as refused (test F28).
+- **Baselines called the model twice per attack** on the server, so a live model could give them different decisions. They now share one, as the replay does.
 
 ## Not done (needs credentials or tooling)
 

@@ -127,20 +127,7 @@ describe("GET /meta", () => {
   });
 });
 
-describe("static pages", () => {
-  it("serves the rob page and the co-sign page", async () => {
-    expect(await (await fetch(base + "/")).text()).toContain("Rob the Pet");
-    expect(await (await fetch(base + "/cosign")).text()).toContain("Pending co-signs");
-    const js = await fetch(base + "/cosign.js");
-    expect(js.headers.get("content-type")).toContain("javascript");
-    expect(await js.text()).toContain("Approve once");
-  });
-
-  it("does not serve files outside the web directory", async () => {
-    expect((await fetch(base + "/..%2Fpackage.json")).status).toBe(404);
-    expect((await fetch(base + "/../package.json")).status).toBe(404);
-  });
-
+describe("startup", () => {
   it("refuses to start in LIVE mode until a live executor exists", () => {
     delete process.env.MOCK;
     expect(() => createAppServer()).toThrow(/LIVE server requires/);

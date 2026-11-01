@@ -86,4 +86,12 @@ export class NearContractClient implements ContractClient {
       learnedFrom: e.learned_from,
     }));
   }
+
+  async getPins(): Promise<string[]> {
+    return (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pins", args: {} })) as string[];
+  }
+
+  async getSpent24h(): Promise<string> {
+    return (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_spent_24h", args: {} })) as string;
+  }
 }

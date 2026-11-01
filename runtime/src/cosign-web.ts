@@ -41,12 +41,14 @@ async function main(): Promise<void> {
       network,
       getPending: () => client.getPending(),
       getBook: () => client.getBook(),
+      getPins: () => client.getPins(),
+      getSpent24h: () => client.getSpent24h(),
       cosign: async (id, hash, remember) =>
         relay(encodeForRelay(await buildCosignDelegate(owner, contractId, id, hash, remember)), { contractId, owner: ownerId, send }),
     },
   });
   const port = Number(process.env.PORT ?? 3000);
-  server.listen(port, "127.0.0.1", () => console.log(`[taint] network=${network} co-sign page: http://127.0.0.1:${port}/cosign`));
+  server.listen(port, "127.0.0.1", () => console.log(`[taint] network=${network} API: http://127.0.0.1:${port}/   Point the site at it: RUNTIME_URL=http://127.0.0.1:${port} npm run site`));
 }
 
 main().catch((e) => {

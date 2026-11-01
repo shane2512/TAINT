@@ -79,6 +79,10 @@ export class MockContract {
     return [...this.book.values()];
   }
 
+  getPins(): string[] {
+    return [...this.pins];
+  }
+
   /** Addresses the owner has approved or pinned accounts have vouched for; what a lookalike is compared against. */
   knownCounterparties(): string[] {
     const now = this.cfg.now();

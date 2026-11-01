@@ -25,6 +25,8 @@ beforeEach(async () => {
     network: "testnet",
     getPending: async () => [pending],
     getBook: async () => [],
+    getPins: async () => [],
+    getSpent24h: async () => "0",
     cosign: async (...a) => (calls.push(a), result),
   };
   server = createAppServer({ chain });

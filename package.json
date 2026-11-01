@@ -11,6 +11,8 @@
     "gen-recordings": "tsx bench/gen-recordings.ts",
     "redteam": "tsx bench/redteam.ts",
     "web": "tsx runtime/src/server.ts",
+    "site": "npm --prefix landing run dev",
+    "test:e2e": "npm --prefix landing run test:e2e",
     "test:contract": "cargo test --workspace --manifest-path contract/Cargo.toml",
     "check:env": "tsx runtime/src/check-env.ts",
     "setup:env": "tsx runtime/src/setup-env.ts"

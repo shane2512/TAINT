@@ -1,37 +1,33 @@
 // Shared glyph field. Both the "raw" canvas and the glyph canvases sample this, so they always agree.
 export const RAMPS: Record<string, string> = {
   classic: " .:-=+*#%@",
-  minimal: " .:+#",
-  soft: " .,:;oO",
-  dense: " .:-=+*#%@&$",
 };
 
 export interface Clock { t: number; paused: boolean }
 
 // v: contour brightness 0..1, r: 1 where the cell is "untrusted" (rendered red)
-export function field(x: number, y: number, t: number): { v: number; r: boolean } {
+export function field(x: number, y: number, t: number, redAt = 0.74): { v: number; r: boolean } {
   const a = Math.sin(x * 0.012 + t * 0.5 + Math.sin(y * 0.014 - t * 0.35) * 2.2);
   const b = Math.cos(y * 0.018 + t * 0.42 + Math.cos(x * 0.01 + t * 0.28) * 2.1);
   const f = a * b;
   const g = Math.sin(x * 0.007 - t * 0.3 + Math.cos(y * 0.009 + t * 0.2) * 3);
   const line = Math.pow(1 - Math.abs(Math.sin(f * 4.2)), 3);
-  return { v: line, r: g > 0.74 && line > 0.15 };
+  return { v: line, r: g > redAt && line > 0.15 };
 }
 
 export interface GlyphOpts {
   cell: number;
   ramp: string;
   light?: boolean;
-  gate?: boolean; // false: no red tint
   mouse?: { x: number; y: number; on: boolean };
   base?: number; // base alpha multiplier
+  redAt?: number; // how much of the field is red: 0.74 a little, 0.1 most of it, 2 none
 }
 
 const RED = "217,20,60";
 
 export function drawGlyphs(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, o: GlyphOpts) {
   const { cell, ramp, light, mouse } = o;
-  const gate = o.gate !== false;
   const base = o.base ?? 1;
   ctx.clearRect(0, 0, w, h);
   ctx.font = `${Math.round(cell * 1.25)}px VT323, monospace`;
@@ -44,7 +40,7 @@ export function drawGlyphs(ctx: CanvasRenderingContext2D, w: number, h: number, 
   for (let j = 0; j < rows; j++) {
     for (let i = 0; i < cols; i++) {
       const px = i * cell + cell / 2, py = j * cell + cell / 2;
-      const { v: v0, r } = field(px, py, t);
+      const { v: v0, r } = field(px, py, t, o.redAt);
       let v = v0;
       if (mouse?.on) {
         const d = Math.hypot(px - mouse.x, py - mouse.y);
@@ -54,7 +50,7 @@ export function drawGlyphs(ctx: CanvasRenderingContext2D, w: number, h: number, 
       if (idx <= 0) continue;
       const k = chars.length;
       chars.push(ramp[idx]);
-      const red = gate && r ? 5 : 0;
+      const red = r ? 5 : 0;
       const lvl = Math.min(4, Math.floor(v * 5));
       buckets[red + lvl].push(k, px, py);
     }
@@ -71,7 +67,7 @@ export function drawGlyphs(ctx: CanvasRenderingContext2D, w: number, h: number, 
 }
 
 // Raw "source" render: contour lines as pixels (drawn small, scaled up by CSS).
-export function drawFlow(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, scale: number, gate = true) {
+export function drawFlow(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, scale: number) {
   const img = ctx.createImageData(w, h);
   const d = img.data;
   for (let y = 0; y < h; y++) {
@@ -79,7 +75,7 @@ export function drawFlow(ctx: CanvasRenderingContext2D, w: number, h: number, t:
       const { v, r } = field(x * scale, y * scale, t);
       const o = (y * w + x) * 4;
       const s = Math.min(1, v * 1.4);
-      if (gate && r) { d[o] = 217 * s + 30; d[o + 1] = 20 * s; d[o + 2] = 60 * s; }
+      if (r) { d[o] = 217 * s + 30; d[o + 1] = 20 * s; d[o + 2] = 60 * s; }
       else { const c = 235 * s + 14 * (1 - s); d[o] = c; d[o + 1] = c; d[o + 2] = c; }
       d[o + 3] = 255;
     }

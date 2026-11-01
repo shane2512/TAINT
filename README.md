@@ -12,10 +12,11 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
 | Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
-| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 57 unit tests, plus the shared 20-case rule table, which the TypeScript stand-in also passes |
+| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 57 unit tests, plus the shared 19-case rule table, which the TypeScript stand-in also passes |
 | `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done; decided to stub** ([decision record](docs/decisions/0001-attestation.md)). The spike was not run. Every command prints `ATTESTATION STUBBED` |
-| NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the co-sign page against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` page still uses the MOCK approval. Mainnet not run |
+| NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the API against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` uses the MOCK approval. Mainnet not run |
+| Site (`landing/`, Next.js) | **Built.** Landing page plus Rob the Pet, Co-sign, Wallet, Policy, Red team and Results. Every feature maps to a browser test: [docs/E2E-MAP.md](docs/E2E-MAP.md). The look follows a reference recording; the content and numbers are ours, read from the saved run files |
 | NEAR Intents payout, mainnet runs | **Not done** |
 | Real-model results | **Replay measured once** with `openai/gpt-oss-120b`, 10 runs per fixture, payments simulated (see "Live-model replay" below). Live red team run once (see below) |
 | Mandates and the liquidity/age fact oracle (stretch) | **Not built** |
@@ -44,8 +45,11 @@ npm install
 npm test                  # TypeScript unit tests
 npm run test:contract     # Rust contract tests (needs a Rust toolchain; see contract/)
 npm run replay            # three agents x four fixtures (two real-incident attacks, two legitimate tasks); add F2 with --fixtures
-npm run redteam           # ten attacks against a fully fooled model
-npm run web               # http://127.0.0.1:3000/  (Rob the Pet)  and /cosign
+npm run redteam           # twelve attacks against a fully fooled model
+npm run web               # the API on http://127.0.0.1:3000/ (MOCK). Add -- --live-model for a real model with simulated payments
+npm --prefix landing install
+npm run site              # the site on http://localhost:3100/ (needs npm run web running)
+npm run test:e2e          # every page in a real browser (first time: npx --prefix landing playwright install chromium)
 ```
 
 `make replay`, `make redteam` and `make test` do the same where `make` exists.
@@ -142,7 +146,7 @@ contract/      Rust: taint (the policy contract) and mockdex (testnet swap stand
 bench/         fixtures, redteam attempts, recordings, replay.ts, redteam.ts, gen-recordings.ts,
                policy-cases.json (the rule table the Rust contract must also pass)
 baselines/     the frozen allowlist config and its README
-web/           Rob the Pet and co-sign pages (plain HTML + ES modules)
+landing/       the site: Next.js, GSAP, Lenis; e2e/ holds the Playwright tests
 docs/superpowers/plans/  the implementation plan;  PRD.md  the product spec
 ```
 

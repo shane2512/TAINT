@@ -1,18 +1,20 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { Icon } from "./ui";
 
 export const SECTIONS = [
   { id: "intro", label: "INTRO" },
-  { id: "demo", label: "LIVE DEMO" },
+  { id: "demo", label: "PROVENANCE" },
   { id: "workflow", label: "WORKFLOW" },
   { id: "features", label: "FEATURES" },
-  { id: "interface", label: "INTERFACE" },
-  { id: "privacy", label: "PRIVACY" },
+  { id: "interface", label: "POLICY DESK" },
+  { id: "privacy", label: "LIMITS" },
   { id: "benchmark", label: "BENCHMARK" },
-  { id: "ecosystem", label: "ECOSYSTEM" },
+  { id: "ecosystem", label: "THE APP" },
   { id: "faq", label: "FAQ" },
   { id: "install", label: "START" },
 ];
@@ -20,7 +22,7 @@ export const SECTIONS = [
 const NAV = [
   { label: "HOW IT WORKS", id: "workflow" },
   { label: "FEATURES", id: "features" },
-  { label: "PRIVACY", id: "privacy" },
+  { label: "LIMITS", id: "privacy" },
   { label: "BENCHMARK", id: "benchmark" },
 ];
 const GLYPHS = "#*+=-%";
@@ -71,6 +73,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         ScrollTrigger.create({
           trigger: `#${s.id}`, start: "top 55%", end: "bottom 55%",
           onToggle: (self) => self.isActive && setActive(i),
+          onRefresh: (self) => self.isActive && setActive(i),
         });
       });
       if (reduce) return;
@@ -135,19 +138,19 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <>
       <header className="nav">
         <a className="brand" href="#intro" onClick={(e) => { e.preventDefault(); go("intro"); }}>
-          <span className="logo" aria-hidden>▣</span> taint.testnet <span className="ver">V0.1.0</span>
+          <Icon name="logo" size={14} /> taint.testnet <span className="ver">V0.1.0</span>
         </a>
         <nav>
           {NAV.map((n) => (
             <a key={n.id} href={`#${n.id}`} className={navOn(n.id) ? "on" : ""} onClick={(e) => { e.preventDefault(); go(n.id); }}>{n.label}</a>
           ))}
           <a href="#faq" onClick={(e) => { e.preventDefault(); go("faq"); }}>FAQ</a>
-          <a className="install" href="#install" onClick={(e) => { e.preventDefault(); go("install"); }}>READ THE REPO <span>↗</span></a>
+          <Link className="install" href="/demo">OPEN THE APP <Icon name="ne" size={10} /></Link>
         </nav>
       </header>
 
       <aside className="rail" ref={railRef} aria-label="Sections">
-        <button className="rail-arrow" aria-label="Previous section" onClick={() => go(SECTIONS[Math.max(0, active - 1)].id)}>↑</button>
+        <button className="rail-arrow" aria-label="Previous section" onClick={() => go(SECTIONS[Math.max(0, active - 1)].id)}><Icon name="up" /></button>
         <ol>
           {SECTIONS.map((s, i) => (
             <li key={s.id} className={i === active ? "on" : ""}>
@@ -156,7 +159,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             </li>
           ))}
         </ol>
-        <button className="rail-arrow" aria-label="Next section" onClick={() => go(SECTIONS[Math.min(SECTIONS.length - 1, active + 1)].id)}>↓</button>
+        <button className="rail-arrow" aria-label="Next section" onClick={() => go(SECTIONS[Math.min(SECTIONS.length - 1, active + 1)].id)}><Icon name="down" /></button>
       </aside>
 
       <main>{children}</main>
