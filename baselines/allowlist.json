@@ -1,0 +1,5 @@
+{
+  "recipients": ["owner-friend.testnet"],
+  "tokens": ["wrap.testnet"],
+  "per_tx_cap_yocto": "1000000000000000000000000"
+}
