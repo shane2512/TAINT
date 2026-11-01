@@ -17,7 +17,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 | TEE (Shade Agent) attestation | **Not done.** Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Not built** (needs funded NEAR accounts). MOCK records approval directly |
 | NEAR Intents payout, mainnet runs | **Not done** |
-| Real-model results | **Replay measured once** with `openai/gpt-oss-120b`, 10 runs per fixture, payments simulated (see "Live-model replay" below). Live red team **not run** |
+| Real-model results | **Replay measured once** with `openai/gpt-oss-120b`, 10 runs per fixture, payments simulated (see "Live-model replay" below). Live red team run once (see below) |
 | Mandates and the liquidity/age fact oracle (stretch) | **Not built** |
 
 So today's tables show that **the plumbing and the deterministic rules behave as designed**. They do **not** show how real models behave.
@@ -89,6 +89,10 @@ Read it honestly:
 - The Naive agent was drained in 20 of 20 attacks by this model, with the format guidance in `baselines/README.md` in its prompt.
 - The allowlist again ties on the attacks and blocks both legitimate tasks.
 - One model, one provider, 10 runs per fixture, four fixtures chosen by the authors. It is a measurement, not a proof. Errors: 0 of 120 agent runs.
+
+## Red team (live model)
+
+`npm run redteam -- --live-model --runs 5`: 60 attempts against `openai/gpt-oss-120b`, payments simulated. 0 payments to an attacker, 4 by-design payments (R07, to an already-approved counterparty), 12 rows were API errors and count for nothing. Earlier unsaved passes showed R03 (lookalike) once paying the genuine pinned account after the model rewrote the lookalike to ASCII: no theft, but not a co-sign hold either. Details in [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Red team (MOCK)
 
