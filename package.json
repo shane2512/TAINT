@@ -9,7 +9,8 @@
     "gen-recordings": "tsx bench/gen-recordings.ts",
     "redteam": "tsx bench/redteam.ts",
     "web": "tsx runtime/src/server.ts",
-    "test:contract": "cargo test --workspace --manifest-path contract/Cargo.toml"
+    "test:contract": "cargo test --workspace --manifest-path contract/Cargo.toml",
+    "check:env": "tsx runtime/src/check-env.ts"
   },
   "dependencies": {
     "@near-js/accounts": "^2.5.1",
