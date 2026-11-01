@@ -1,4 +1,4 @@
-# Round 2: current-trend brief (researched 28 Oct 2026)
+# Round 2: current-trend brief (researched 1 Nov 2026)
 
 Goal: find an AI idea that is better and less generic than ESTATE. Crypto inheritance and dead-man switches are common hackathon ideas.
 
