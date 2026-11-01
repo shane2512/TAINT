@@ -106,6 +106,7 @@ export function renderScoreboard(rows: RedteamRow[]): string {
 }
 
 async function main(): Promise<void> {
+  process.env.MOCK ??= "1"; // the only runnable mode until a live executor exists; the banner always states it
   const rows = await runRedteam();
   console.log(renderScoreboard(rows));
   if (rows.some((r) => !r.matchesExpect || (r.fundsMovedWithoutCosign && !r.byDesign))) process.exitCode = 1;

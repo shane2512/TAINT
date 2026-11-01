@@ -127,6 +127,7 @@ export function renderTable(rows: Row[]): string {
 }
 
 async function main(): Promise<void> {
+  process.env.MOCK ??= "1"; // the only runnable mode until a live executor exists; the banner always states it
   const args = process.argv.slice(2);
   const get = (flag: string, d: string) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : d);
   const ids = get("--fixtures", "F1,F3,L1,L2").split(",");
