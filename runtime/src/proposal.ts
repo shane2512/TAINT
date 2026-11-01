@@ -36,6 +36,8 @@ const HANDLE_KIND: Record<ArgType, HandleKind> = { recipient: "Account", token: 
 
 class BadArg extends Error {}
 
+const MAX_SOURCE = 128;
+
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const squash = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
@@ -84,7 +86,8 @@ function resolve(
     throw new BadArg(`unknown handle ${r.handle}`);
   }
   if (h.kind !== HANDLE_KIND[type]) throw new BadArg(`handle ${h.id} is a ${h.kind}, not usable as ${type}`);
-  return { value: h.value, prov: { class: "Untrusted", source: h.source }, handleId: h.id };
+  // taint.near refuses sources over 128 bytes, and the source text is attacker-chosen (a URL, a username)
+  return { value: h.value, prov: { class: "Untrusted", source: h.source.slice(0, MAX_SOURCE) }, handleId: h.id };
 }
 
 export function buildProposal(

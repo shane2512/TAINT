@@ -128,6 +128,24 @@
       ]
     },
     {
+      "name": "a transfer whose recipient has no provenance is malformed, not trusted",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "attacker.near", "amountNear": "1" }, "prov": { "amount": "owner" }, "expect": { "Rejected": "malformed" } }
+      ]
+    },
+    {
+      "name": "a swap whose token has no provenance is malformed, not trusted",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Swap", "token": "newtoken.near", "amountNear": "1" }, "prov": { "amount": "owner" }, "expect": { "Rejected": "malformed" } }
+      ]
+    },
+    {
+      "name": "provenance for an argument the action does not have is malformed",
+      "steps": [
+        { "op": "propose", "id": "a", "action": { "kind": "Transfer", "recipient": "alice.near", "amountNear": "1" }, "prov": { "recipient": "owner", "token": "owner", "amount": "owner" }, "expect": { "Rejected": "malformed" } }
+      ]
+    },
+    {
       "name": "unpinning a vouching account revokes its payees",
       "steps": [
         { "op": "pin", "account": "acme.near" },

@@ -22,6 +22,10 @@ const PENDING_TTL_NS: u64 = 15 * 60 * 1000 * MS;
 /// Held proposals older than this are deleted on the next propose, so storage stays bounded.
 const RETENTION_NS: u64 = DAY_NS;
 const MAX_FLOW_HASH_LEN: usize = 64;
+/// The worker chooses the source labels, and held proposals are stored: bound them so a leaked worker key
+/// cannot lock the contract's balance in storage staking.
+const MAX_SOURCE_LEN: usize = 128;
+const MAX_PENDING: usize = 100;
 const BUY_GAS: Gas = Gas::from_tgas(30);
 
 #[near(serializers = [json, borsh])]
@@ -68,12 +72,19 @@ pub struct Taint {
     next_id: u64,
     /// (time, amount) of everything executed in the rolling window
     spent: Vec<(u64, u128)>,
+    paused: bool,
 }
 
 #[near]
 impl Taint {
+    /// Must be called by the contract account itself, in the same batch as the deploy. Otherwise anyone
+    /// watching the chain could call it first and become the owner.
     #[init]
     pub fn new(owner: AccountId, mockdex: AccountId, config: Config) -> Self {
+        require!(
+            env::predecessor_account_id() == env::current_account_id(),
+            "init must be called by the contract account"
+        );
         Self {
             owner,
             mockdex,
@@ -86,6 +97,7 @@ impl Taint {
             pending: BTreeMap::new(),
             next_id: 1,
             spent: Vec::new(),
+            paused: false,
         }
     }
 
@@ -94,6 +106,34 @@ impl Taint {
     pub fn register_worker(&mut self, worker: AccountId) {
         self.only_owner();
         self.workers.insert(worker);
+    }
+
+    /// Revoke a worker, for example one whose key leaked.
+    pub fn remove_worker(&mut self, worker: AccountId) {
+        self.only_owner();
+        self.workers.remove(&worker);
+    }
+
+    /// While paused, no proposal is accepted and no payment is released (including by co-sign).
+    /// The owner can still withdraw.
+    pub fn set_paused(&mut self, paused: bool) {
+        self.only_owner();
+        self.paused = paused;
+    }
+
+    /// Take funds out. The owner's own authority, so it is not subject to the rolling cap (that cap exists to
+    /// bound the worker). It leaves the storage-staking reserve in place.
+    pub fn withdraw(&mut self, to: AccountId, amount: U128) -> Promise {
+        self.only_owner();
+        let reserve = env::storage_byte_cost().saturating_mul(env::storage_usage() as u128);
+        let available = env::account_balance().saturating_sub(reserve);
+        require!(NearToken::from_yoctonear(amount.0) <= available, "insufficient balance");
+        Promise::new(to).transfer(NearToken::from_yoctonear(amount.0))
+    }
+
+    pub fn set_config(&mut self, config: Config) {
+        self.only_owner();
+        self.cfg = config;
     }
 
     /// Approve a counterparty. Defaults to the configured cap and lifetime.
@@ -161,6 +201,13 @@ impl Taint {
     pub fn propose(&mut self, action: ProposedAction, prov: ArgProvenance, flow_hash: String) -> ProposalOutcome {
         require!(self.workers.contains(&env::predecessor_account_id()), "worker only");
         require!(flow_hash.len() <= MAX_FLOW_HASH_LEN, "flow_hash too long");
+        for p in [&prov.recipient, &prov.token].into_iter().flatten().chain([&prov.amount]) {
+            require!(p.source.len() <= MAX_SOURCE_LEN, "source too long");
+        }
+        if self.paused {
+            // before the flow_hash is burned, so the same proposal can be retried after unpausing
+            return ProposalOutcome::Rejected { reason: "paused".into() };
+        }
         let now = env::block_timestamp();
         self.pending.retain(|_, p| now.saturating_sub(p.created_at.0) <= RETENTION_NS);
 
@@ -175,6 +222,9 @@ impl Taint {
             Decision::Execute => {
                 let id = self.take_id();
                 self.execute(id, &action)
+            }
+            Decision::Pending(_) if self.pending.len() >= MAX_PENDING => {
+                ProposalOutcome::Rejected { reason: "too many pending".into() }
             }
             Decision::Pending(reasons) => {
                 let id = self.take_id();
@@ -243,6 +293,9 @@ impl Taint {
 
     /// Enforce the rolling cap and the contract's balance, then schedule the payment.
     fn execute(&mut self, id: u64, action: &ProposedAction) -> ProposalOutcome {
+        if self.paused {
+            return ProposalOutcome::Rejected { reason: "paused".into() };
+        }
         let now = env::block_timestamp();
         let amount = action.amount.0;
         self.spent.retain(|(ts, _)| now.saturating_sub(*ts) < DAY_NS);

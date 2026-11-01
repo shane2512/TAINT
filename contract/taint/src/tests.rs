@@ -14,6 +14,7 @@ fn acct(s: &str) -> AccountId {
 
 fn ctx(predecessor: &str, now_ns: u64, balance_near: u128) {
     testing_env!(VMContextBuilder::new()
+        .current_account_id(acct("taint.near"))
         .predecessor_account_id(acct(predecessor))
         .block_timestamp(now_ns)
         .account_balance(NearToken::from_yoctonear(balance_near * NEAR))
@@ -31,7 +32,7 @@ fn config() -> Config {
 }
 
 fn setup() -> Taint {
-    ctx("anyone.near", T0, 1000);
+    ctx("taint.near", T0, 1000); // init must come from the contract account itself
     let mut c = Taint::new(acct("owner.near"), acct("dex.near"), config());
     ctx("owner.near", T0, 1000);
     c.register_worker(acct("worker.near"));
@@ -225,4 +226,201 @@ fn an_oversized_flow_hash_is_refused() {
     let mut c = setup();
     ctx("worker.near", T0, 1000);
     c.propose(transfer("alice.near", NEAR), owner_transfer_prov(), "x".repeat(65));
+}
+
+fn held_prov() -> ArgProvenance {
+    ArgProvenance { recipient: Some(untrusted("x.com/@a")), token: None, amount: owner_prov() }
+}
+
+fn hold(c: &mut Taint, flow: &str) -> (u64, String) {
+    ctx("worker.near", T0, 1000);
+    match c.propose(transfer("new.near", NEAR / 2), held_prov(), flow.into()) {
+        ProposalOutcome::Pending { proposal_id, proposal_hash, .. } => (proposal_id, proposal_hash),
+        other => panic!("expected pending, got {other:?}"),
+    }
+}
+
+// ---- the deploy-time front-run (review I2) ----
+
+#[test]
+#[should_panic(expected = "init must be called by the contract account")]
+fn new_refuses_a_caller_other_than_the_contract_account() {
+    ctx("attacker.near", T0, 1000);
+    Taint::new(acct("attacker.near"), acct("dex.near"), config());
+}
+
+// ---- recovering from a leaked worker (review C1) ----
+
+#[test]
+#[should_panic(expected = "worker only")]
+fn a_removed_worker_can_no_longer_propose() {
+    let mut c = setup();
+    ctx("owner.near", T0, 1000);
+    c.remove_worker(acct("worker.near"));
+    assert!(!c.is_worker(acct("worker.near")));
+    ctx("worker.near", T0, 1000);
+    c.propose(transfer("alice.near", NEAR), owner_transfer_prov(), "f1".into());
+}
+
+#[test]
+#[should_panic(expected = "owner only")]
+fn remove_worker_is_owner_only() {
+    let mut c = setup();
+    ctx("worker.near", T0, 1000);
+    c.remove_worker(acct("worker.near"));
+}
+
+#[test]
+fn a_paused_contract_rejects_proposals_without_burning_the_flow_hash() {
+    let mut c = setup();
+    ctx("owner.near", T0, 1000);
+    c.set_paused(true);
+    ctx("worker.near", T0, 1000);
+    let out = c.propose(transfer("alice.near", NEAR), owner_transfer_prov(), "f1".into());
+    assert_eq!(out, ProposalOutcome::Rejected { reason: "paused".into() });
+    assert_eq!(c.get_spent_24h(), U128(0));
+    ctx("owner.near", T0, 1000);
+    c.set_paused(false);
+    ctx("worker.near", T0, 1000);
+    let again = c.propose(transfer("alice.near", NEAR), owner_transfer_prov(), "f1".into());
+    assert!(matches!(again, ProposalOutcome::Executed { .. }), "{again:?}");
+}
+
+#[test]
+fn a_paused_contract_refuses_a_cosign_and_keeps_the_proposal_pending() {
+    let mut c = setup();
+    let (id, hash) = hold(&mut c, "f1");
+    ctx("owner.near", T0, 1000);
+    c.set_paused(true);
+    assert_eq!(c.cosign(id, hash.clone(), false), ProposalOutcome::Rejected { reason: "paused".into() });
+    assert!(get_created_receipts().is_empty());
+    c.set_paused(false);
+    assert!(matches!(c.cosign(id, hash, false), ProposalOutcome::Executed { .. }));
+}
+
+#[test]
+#[should_panic(expected = "owner only")]
+fn set_paused_is_owner_only() {
+    let mut c = setup();
+    ctx("worker.near", T0, 1000);
+    c.set_paused(true);
+}
+
+#[test]
+fn withdraw_sends_the_amount_and_ignores_the_rolling_cap() {
+    let mut c = setup();
+    ctx("owner.near", T0, 1000);
+    let _ = c.withdraw(acct("owner.near"), U128(10 * NEAR)); // twice the 5 NEAR cap
+    let receipts = get_created_receipts();
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].receiver_id, acct("owner.near"));
+    match &receipts[0].actions[..] {
+        [MockAction::Transfer { deposit, .. }] => assert_eq!(*deposit, NearToken::from_yoctonear(10 * NEAR)),
+        other => panic!("expected one Transfer, got {other:?}"),
+    }
+    assert_eq!(c.get_spent_24h(), U128(0));
+}
+
+#[test]
+fn withdraw_still_works_while_paused() {
+    let mut c = setup();
+    ctx("owner.near", T0, 1000);
+    c.set_paused(true);
+    let _ = c.withdraw(acct("owner.near"), U128(NEAR));
+    assert_eq!(get_created_receipts().len(), 1);
+}
+
+#[test]
+#[should_panic(expected = "insufficient balance")]
+fn withdraw_beyond_the_balance_is_refused() {
+    let mut c = setup();
+    ctx("owner.near", T0, 1);
+    let _ = c.withdraw(acct("owner.near"), U128(2 * NEAR));
+}
+
+#[test]
+#[should_panic(expected = "owner only")]
+fn withdraw_is_owner_only() {
+    let mut c = setup();
+    ctx("worker.near", T0, 1000);
+    let _ = c.withdraw(acct("worker.near"), U128(NEAR));
+}
+
+#[test]
+fn set_config_changes_the_rolling_cap() {
+    let mut c = setup();
+    ctx("owner.near", T0, 1000);
+    c.set_config(Config { global_cap_24h: U128(10 * NEAR), ..config() });
+    ctx("worker.near", T0, 1000);
+    let out = c.propose(transfer("alice.near", 6 * NEAR), owner_transfer_prov(), "f1".into());
+    assert!(matches!(out, ProposalOutcome::Executed { .. }), "{out:?}");
+}
+
+#[test]
+#[should_panic(expected = "owner only")]
+fn set_config_is_owner_only() {
+    let mut c = setup();
+    ctx("worker.near", T0, 1000);
+    c.set_config(config());
+}
+
+// ---- bounding what a worker can store (review I3) ----
+
+fn with_source(len: usize) -> ArgProvenance {
+    ArgProvenance { recipient: Some(untrusted(&"s".repeat(len))), token: None, amount: owner_prov() }
+}
+
+#[test]
+#[should_panic(expected = "source too long")]
+fn an_oversized_provenance_source_is_refused() {
+    let mut c = setup();
+    ctx("worker.near", T0, 1000);
+    c.propose(transfer("new.near", NEAR / 2), with_source(129), "f1".into());
+}
+
+#[test]
+fn a_source_of_exactly_128_bytes_is_accepted() {
+    let mut c = setup();
+    ctx("worker.near", T0, 1000);
+    let out = c.propose(transfer("new.near", NEAR / 2), with_source(128), "f1".into());
+    assert!(matches!(out, ProposalOutcome::Pending { .. }), "{out:?}");
+}
+
+#[test]
+fn the_hundred_and_first_pending_proposal_is_refused() {
+    let mut c = setup();
+    for i in 0..100 {
+        hold(&mut c, &format!("f{i}"));
+    }
+    assert_eq!(c.get_pending().len(), 100);
+    ctx("worker.near", T0, 1000);
+    let out = c.propose(transfer("new.near", NEAR / 2), held_prov(), "f100".into());
+    assert_eq!(out, ProposalOutcome::Rejected { reason: "too many pending".into() });
+}
+
+// ---- the co-sign path moves money (review M5) ----
+
+#[test]
+fn a_successful_cosign_schedules_the_payment() {
+    let mut c = setup();
+    let (id, hash) = hold(&mut c, "f1");
+    ctx("owner.near", T0, 1000);
+    assert!(matches!(c.cosign(id, hash, false), ProposalOutcome::Executed { .. }));
+    let receipts = get_created_receipts();
+    assert_eq!(receipts.len(), 1);
+    assert_eq!(receipts[0].receiver_id, acct("new.near"));
+    assert!(matches!(&receipts[0].actions[..], [MockAction::Transfer { .. }]));
+    assert_eq!(c.get_spent_24h(), U128(NEAR / 2));
+}
+
+#[test]
+fn a_cosign_the_cap_rejects_schedules_nothing() {
+    let mut c = setup();
+    let (id, hash) = hold(&mut c, "f1");
+    ctx("worker.near", T0, 1000);
+    c.propose(transfer("alice.near", 5 * NEAR), owner_transfer_prov(), "f2".into());
+    ctx("owner.near", T0, 1000); // a fresh environment, so earlier receipts are gone
+    let out = c.cosign(id, hash, false);
+    assert_eq!(out, ProposalOutcome::Rejected { reason: "global cap exceeded".into() });
+    assert!(get_created_receipts().is_empty());
 }

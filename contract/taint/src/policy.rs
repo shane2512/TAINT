@@ -23,8 +23,11 @@ pub fn evaluate(view: &impl PolicyView, action: &ProposedAction, prov: &ArgProve
         ActionKind::Transfer => action.recipient.is_some() && action.token.is_none(),
         ActionKind::Swap => action.token.is_some() && action.recipient.is_none(),
     };
+    // Provenance must be present for exactly the arguments the action has. A missing label must never read as
+    // "trusted": an address with no provenance would otherwise skip the untrusted checks entirely.
+    let prov_matches = action.recipient.is_some() == prov.recipient.is_some() && action.token.is_some() == prov.token.is_some();
     let amount = action.amount.0;
-    if !well_formed || amount == 0 {
+    if !well_formed || !prov_matches || amount == 0 {
         return Decision::Reject("malformed".into());
     }
 
@@ -203,6 +206,27 @@ mod tests {
         a.recipient = Some(acct("a.near"));
         let p = ArgProvenance { recipient: Some(owner()), token: Some(owner()), amount: owner() };
         assert_eq!(evaluate(&FakeView::default(), &a, &p, 0), Decision::Reject("malformed".into()));
+    }
+
+    #[test]
+    fn a_recipient_without_provenance_is_malformed_not_trusted() {
+        let p = ArgProvenance { recipient: None, token: None, amount: owner() };
+        let d = evaluate(&FakeView::default(), &transfer("attacker.near", NEAR), &p, 0);
+        assert_eq!(d, Decision::Reject("malformed".into()));
+    }
+
+    #[test]
+    fn a_token_without_provenance_is_malformed_not_trusted() {
+        let p = ArgProvenance { recipient: None, token: None, amount: owner() };
+        let d = evaluate(&FakeView::default(), &swap("newtoken.near", NEAR), &p, 0);
+        assert_eq!(d, Decision::Reject("malformed".into()));
+    }
+
+    #[test]
+    fn provenance_for_an_argument_the_action_lacks_is_malformed() {
+        let p = ArgProvenance { recipient: Some(owner()), token: Some(owner()), amount: owner() };
+        let d = evaluate(&FakeView::default(), &transfer("alice.near", NEAR), &p, 0);
+        assert_eq!(d, Decision::Reject("malformed".into()));
     }
 
     #[test]

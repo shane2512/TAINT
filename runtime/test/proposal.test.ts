@@ -73,6 +73,17 @@ describe("buildProposal", () => {
     expect(buildProposal(p, s, "n")).toBeNull();
   });
 
+  it("truncates an over-long source so the contract's 128-byte limit can never be hit by attacker-chosen text", () => {
+    const s = new HandleStore();
+    s.add("Account", "attacker.near", "web:" + "a".repeat(500));
+    s.add("Amount", "1000000000000000000000000", "web:" + "b".repeat(500));
+    const p: PlannedAction = { kind: "Transfer", recipient: { handle: "$h1" }, amount: { handle: "$h2" }, token: none };
+    const r = buildProposal(p, s, "n")!;
+    expect(r.prov.recipient!.source).toHaveLength(128);
+    expect(r.prov.recipient!.source.startsWith("web:aaa")).toBe(true);
+    expect(r.prov.amount.source).toHaveLength(128);
+  });
+
   it("returns null for kind None and for malformed shapes", () => {
     expect(buildProposal({ kind: "None", recipient: none, token: none, amount: none }, new HandleStore(), "n")).toBeNull();
     const transferWithToken: PlannedAction = { kind: "Transfer", recipient: { literal: "a.near" }, token: { literal: "t.near" }, amount: { literal: "1 NEAR" } };

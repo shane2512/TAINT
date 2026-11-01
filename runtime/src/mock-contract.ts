@@ -130,6 +130,10 @@ export class MockContract {
   private evaluate(action: ProposedAction, prov: ArgProvenance): { reject: string } | { pending: string[] } | "execute" {
     if (action.kind === "Transfer" && (!action.recipient || action.token)) return { reject: "malformed" };
     if (action.kind === "Swap" && (!action.token || action.recipient)) return { reject: "malformed" };
+    // Provenance must be present for exactly the arguments the action has; a missing label must never read as trusted.
+    if ((action.recipient !== null) !== (prov.recipient !== null) || (action.token !== null) !== (prov.token !== null)) {
+      return { reject: "malformed" };
+    }
     const raw = BigInt(action.amount);
     if (raw <= 0n || raw > U128_MAX) return { reject: "malformed" }; // the Rust contract's amount is a u128
     const reasons: string[] = [];

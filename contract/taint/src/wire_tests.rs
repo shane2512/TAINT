@@ -36,6 +36,19 @@ fn it_rejects_an_unknown_trust_class_instead_of_guessing() {
 }
 
 #[test]
+fn it_refuses_an_amount_above_u128_max_at_the_json_layer() {
+    // The shared rule table calls this "malformed"; in Rust the type itself cannot hold it.
+    assert!(serde_json::from_value::<ProposedAction>(json!({
+        "kind": "Transfer", "recipient": "alice.near", "token": null, "amount": "340282366920938463463374607431768211456"
+    }))
+    .is_err());
+    assert!(serde_json::from_value::<ProposedAction>(json!({
+        "kind": "Transfer", "recipient": "alice.near", "token": null, "amount": "340282366920938463463374607431768211455"
+    }))
+    .is_ok());
+}
+
+#[test]
 fn it_rejects_an_amount_that_is_a_number_not_a_string() {
     assert!(serde_json::from_value::<ProposedAction>(json!({
         "kind": "Transfer", "recipient": "alice.near", "token": null, "amount": 5

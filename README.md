@@ -12,7 +12,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
 | Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
-| `taint.near` Rust contract (`contract/taint`) | **Built and unit-tested, not deployed.** 36 unit tests, plus the shared rule table below, which the TypeScript stand-in also passes |
+| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested and reviewed, not deployed.** 57 unit tests, plus the shared 20-case rule table, which the TypeScript stand-in also passes |
 | `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done.** Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Not built** (needs funded NEAR accounts). MOCK records approval directly |
@@ -74,6 +74,29 @@ Read it honestly:
 `npm run redteam` assumes the extractor and planner are **fully fooled** and checks that the deterministic layers still hold: 12 attempts (base64, Morse, Unicode lookalike, spelled-out amount, multi-hop, pasted "owner says", value collision, one yocto over a cap, planner-shaped JSON, over-long instruction, role confusion, text typed into the instruction itself). Result: 10 held or refused, 2 executed **by design**, 0 failures. R07: the attacker names a counterparty you already approved, within its cap. R12: text you type or paste into the signed instruction is treated as yours, so a client must put pasted content in an attachment, as the web page does (there is no CLI yet that does this for a pasted block).
 
 Writing and reviewing these attacks found three real gaps, now fixed: a fooled planner could emit a value you never typed (grounding); it could pick a value you typed for a different role (role-ambiguity demotion); and replay protection depended on the model being deterministic (the flow hash now comes from your signed message alone). See [bench/RESULTS.md](bench/RESULTS.md).
+
+## The contract and what the owner can do
+
+`taint.near` holds the funds. A registered *worker* (the agent) calls `propose`; the *owner* calls `cosign`. Provenance labels are declared by the worker, so the contract cannot verify them: a leaked worker key is the main risk. The owner has these controls, none of them subject to the rolling cap:
+
+- `remove_worker(account)`: revoke a worker.
+- `set_paused(true)`: stop every proposal and every release (including co-sign). The owner can still withdraw.
+- `withdraw(to, amount)`: take funds out, leaving the storage-staking reserve.
+- `set_config(...)`: change the caps and lifetimes.
+
+Deploying it:
+
+- Call `new` in the **same batch as the deploy**. It refuses any caller but the contract account, so nobody can front-run it and become the owner.
+- Deleting the contract account's full-access key makes it permanent. There is **no code upgrade path**, so a bug is then permanent too. Keep a full-access key until you have verified the deployment, and delete it only for the final claim.
+- The owner is an *account*, so rotate the owner's keys at the account level if they leak. There is no `set_owner`.
+- Held proposals expire after 15 minutes and are deleted after 24 hours. At most 100 can be pending, and a provenance source label is limited to 128 bytes.
+
+Known limits:
+
+- **An entry's cap is per transaction, not per day.** A remembered counterparty with a 1 NEAR cap can receive several 1 NEAR payments; the 24h rolling cap bounds the total.
+- **`Executed` means the payment was scheduled, not that it settled.** A transfer to an account that does not exist fails and is refunded to the contract, but still counts against the 24h cap.
+- **The set of used flow hashes only grows** (about 0.001 NEAR of storage per proposal, locked). Pruning it would weaken replay protection, so it is not pruned.
+- The balance check does not account for the storage-staking reserve; a payment that dips into it fails cleanly at the protocol level.
 
 ## What is not claimed
 

@@ -26,6 +26,7 @@ fn near_to_yocto(s: &str) -> u128 {
 
 fn ctx(predecessor: &str, now_ns: u64) {
     testing_env!(VMContextBuilder::new()
+        .current_account_id(acct("taint.near"))
         .predecessor_account_id(acct(predecessor))
         .block_timestamp(now_ns)
         .account_balance(NearToken::from_near(1_000_000_000))
@@ -67,7 +68,7 @@ fn run_case(table: &Value, case: &Value) {
         global_cap_24h: U128(near_to_yocto(c["globalCap24hNear"].as_str().unwrap())),
     };
     let mut now = 1_000_000 * MS;
-    ctx("anyone.near", now);
+    ctx("taint.near", now); // init must come from the contract account itself
     let mut contract = Taint::new(acct("owner.near"), acct("dex.near"), cfg);
     ctx("owner.near", now);
     contract.register_worker(acct("worker.near"));

@@ -17,7 +17,18 @@ Everything here is from **MOCK** runs with **hand-authored model outputs** unles
 - **Role confusion.** Grounding proved the owner typed a value, not which role they meant it for. With two accounts or two amounts in the instruction, a wrong planner could pick the wrong one and it executed with no co-sign. Now demoted to untrusted (`owner-ambiguous`) and held. Tests: `proposal-grounding.test.ts`; red-team R11.
 - **Replay depended on a deterministic model.** The flow hash covered the plan, so a live model re-planning the same signed message could yield a new hash and a second execution. The hash now derives only from the owner's nonce. Test: `taint-agent.test.ts` "blocks a replay even when the model plans something different the second time" (my first draft passed for the wrong reason and was corrected to fail first).
 - **Text typed into the instruction itself** was untested and unstated. Added R12 (executes by design) and a README line.
-- **Rule precision for the Rust port.** `bench/policy-cases.json` is now the shared rule table (17 cases). Three rules came out of writing it: an amount must be 1..=u128 max; approve-and-remember never lowers an existing live entry; the rest pin down existing behaviour (window edge, flow_hash burn, pending TTL edge, payee cooldown restart).
+- **Rule precision for the Rust port.** `bench/policy-cases.json` is now the shared rule table (20 cases after the contract review). Three rules came out of writing it: an amount must be 1..=u128 max; approve-and-remember never lowers an existing live entry; the rest pin down existing behaviour (window edge, flow_hash burn, pending TTL edge, payee cooldown restart).
+
+### Findings from the contract review, fixed
+A fresh reviewer read the Rust contract and judged it **not ready to deploy**. Fixed, each with a failing test first:
+- **No way to recover once the full-access key is deleted.** A leaked worker key could send 5 NEAR a day to anywhere, forever, and the owner could neither revoke it, pause the contract (the PRD requires a pause), nor withdraw faster than the cap. Added `remove_worker`, `set_paused`, `withdraw` and `set_config`.
+- **Missing provenance read as trusted.** A transfer with no provenance on its recipient skipped the untrusted checks and executed. Both implementations now treat provenance that does not match the action's arguments as malformed (three new shared cases).
+- **`new` could be front-run** between deploy and init. It now requires the contract account as caller.
+- **A leaked worker could lock the contract's balance in storage.** Source labels are limited to 128 bytes (the runtime truncates), and pending proposals to 100.
+- **Test gaps on the co-sign path** (it schedules a payment; a capped co-sign schedules none) and a vacuous-looking u128 case (now also a JSON-layer test).
+- **`mockdex` keeps deposits and has no withdraw**, so it now refuses to run outside `*.testnet`.
+
+Deferred: payment-failure callback, storage-reserve-aware balance check, per-entry cumulative caps, re-pin cooldown restart, a code-upgrade path.
 
 ### Process finding
 Recordings are keyed by the planner's prompt (owner text plus coarse handle summaries), so two cases with the same prompt cannot record different outputs. A fixture silently overwrote another's recording before the generator learned to refuse that. See `runtime/test/gen-recordings.test.ts`.

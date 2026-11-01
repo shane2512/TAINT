@@ -14,6 +14,8 @@ pub struct MockDex {
 impl MockDex {
     #[payable]
     pub fn buy(&mut self, token: AccountId) {
+        // It keeps whatever it is sent and has no withdraw, so it must never run where the money is real.
+        require!(env::current_account_id().as_str().ends_with(".testnet"), "mockdex runs on testnet only");
         let amount = env::attached_deposit();
         require!(!amount.is_zero(), "attach a deposit");
         self.buys += 1;
@@ -39,6 +41,7 @@ mod tests {
 
     fn ctx(deposit_near: u128) {
         testing_env!(VMContextBuilder::new()
+            .current_account_id("mockdex.taint.testnet".parse().unwrap())
             .predecessor_account_id("taint.near".parse().unwrap())
             .attached_deposit(NearToken::from_near(deposit_near))
             .build());
@@ -69,9 +72,24 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "testnet only")]
+    fn buy_refuses_to_run_outside_testnet() {
+        testing_env!(VMContextBuilder::new()
+            .current_account_id("mockdex.near".parse().unwrap())
+            .predecessor_account_id("taint.near".parse().unwrap())
+            .attached_deposit(NearToken::from_near(1))
+            .build());
+        let mut dex = MockDex::default();
+        dex.buy("a.near".parse().unwrap());
+    }
+
+    #[test]
     #[should_panic(expected = "attach a deposit")]
     fn buy_without_a_deposit_is_refused() {
-        testing_env!(VMContextBuilder::new().predecessor_account_id("taint.near".parse().unwrap()).build());
+        testing_env!(VMContextBuilder::new()
+            .current_account_id("mockdex.taint.testnet".parse().unwrap())
+            .predecessor_account_id("taint.near".parse().unwrap())
+            .build());
         let mut dex = MockDex::default();
         dex.buy("a.near".parse().unwrap());
     }
