@@ -2,7 +2,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const root = path.resolve(process.cwd(), "..");
+// Next to the repo: its bench/ folder. Deployed alone: the copy that scripts/sync-data.mjs keeps in data/.
+const repo = path.resolve(process.cwd(), "..");
+const root = fs.existsSync(path.join(repo, "bench")) ? repo : path.resolve(process.cwd(), "data");
 const read = (...p: string[]) => fs.readFileSync(path.join(root, ...p), "utf8");
 const json = (...p: string[]) => JSON.parse(read(...p));
 

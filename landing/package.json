@@ -6,7 +6,9 @@
     "build": "next build",
     "start": "next start -p 3100",
     "test:e2e": "node e2e/run.mjs",
-    "test:e2e:live": "node e2e/run.mjs -c playwright.live.config.ts"
+    "test:e2e:live": "node e2e/run.mjs -c playwright.live.config.ts",
+    "prebuild": "node scripts/sync-data.mjs",
+    "predev": "node scripts/sync-data.mjs"
   },
   "dependencies": {
     "gsap": "^3.13.0",

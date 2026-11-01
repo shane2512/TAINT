@@ -17,6 +17,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 | TEE (Shade Agent) attestation | **Not done; decided to stub** ([decision record](docs/decisions/0001-attestation.md)). The spike was not run. Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the API against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` uses the MOCK approval. Mainnet not run |
 | Site (`landing/`, Next.js) | **Built.** Landing page plus Rob the Pet, Co-sign, Wallet, Policy, Red team and Results. Every feature maps to a browser test: [docs/E2E-MAP.md](docs/E2E-MAP.md). The look follows a reference recording; the content and numbers are ours, read from the saved run files |
+| Public demo | **Live, simulated payments only:** https://taint-site.vercel.app (site on Vercel, API on Render's free plan, which sleeps when idle and takes about a minute to wake). Free-text attacks are off there. Each visitor has a separate wallet. The testnet co-sign runs locally, because it needs a demo owner key |
 | NEAR Intents payout, mainnet runs | **Not done** |
 | Real-model results | **Replay measured once** with `openai/gpt-oss-120b`, 10 runs per fixture, payments simulated (see "Live-model replay" below). Live red team run once (see below) |
 | Mandates and the liquidity/age fact oracle (stretch) | **Not built** |
