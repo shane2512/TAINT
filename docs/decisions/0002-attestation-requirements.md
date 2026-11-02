@@ -71,3 +71,9 @@ Read 2026-11-02 from `docs.near.ai` (including its `llms.txt` page index) and `n
 - It could attest the **model**: that the planner and extractor outputs came from a named model running in a TEE, with a signature over the exact bytes. It also keeps the text the model reads (which is attacker-controlled) private from the host.
 - It does **not** attest the **worker**: the code that labels each value as owner or outside and calls `propose`. That is the part the threat model depends on ("a compromised host can fabricate provenance"), and only the Shade/Phala route addresses it.
 - So the two are different properties, not alternatives. Neither has been built into TAINT. Whether the NEAR AI models can enforce the strict JSON schemas our parsers rely on has not been checked.
+
+### Using it (chosen 2026-11-02)
+
+The runtime already speaks the OpenAI API (`runtime/src/llm.ts`), so the model call needs only `LLM_BASE_URL=https://cloud-api.near.ai/v1`, an API key and a model id. Two things from the public catalogue (`GET /v1/model/list`):
+- Many models there are **not** verifiable: `anthropic/*` and others are `verifiable: false`, `providerType: external`, i.e. NEAR relays the call to the vendor. Only models with `verifiable: true` and `attestationSupported: true` run in an attested TEE. Candidates that also list `structured_outputs`: `Qwen/Qwen3.6-35B-A3B-FP8`, `Qwen/Qwen3.8-27B`, `z-ai/glm-5.3-flash` (vLLM on NEAR's own hardware), `moonshotai/kimi-k2.6` (via Chutes).
+- Response signatures are fetched from `GET /v1/signature/{chat_id}` and cover the **exact** request and response bytes; the docs require sending the canonical model id with `x-no-aliasing: true`, and checking gateway and model attestation *before* the call. The OpenAI SDK parses the response, so verifying means a raw-fetch path. That is not built.
