@@ -15,7 +15,8 @@
     "test:e2e": "npm --prefix landing run test:e2e",
     "test:contract": "cargo test --workspace --manifest-path contract/Cargo.toml",
     "check:env": "tsx runtime/src/check-env.ts",
-    "setup:env": "tsx runtime/src/setup-env.ts"
+    "setup:env": "tsx runtime/src/setup-env.ts",
+    "propose-testnet": "tsx bench/propose-testnet.ts"
   },
   "dependencies": {
     "@near-js/accounts": "^2.5.1",

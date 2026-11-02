@@ -110,6 +110,23 @@ Opt-in: `npm --prefix landing run test:e2e:live` (F58 to F61; needs `.env`, spen
 | F63 | No free-text attack on the public demo, and the API refuses it too | `server.ts` `publicDemo`, `demo/page.tsx` | `server-public.test` | 09-public |
 | F64 | The visitor id is an HttpOnly cookie | `route.ts` | | 09-public |
 
+## Approve on testnet with your own wallet: `/cosign`, lower section
+
+A stub NEAR RPC stands in for testnet, and a fake wallet for the real one (the test build sets `NEXT_PUBLIC_WALLET_MOCK`). The real wallet popup is not automated.
+
+| ID | Feature | Code | Unit tests | Spec |
+|---|---|---|---|---|
+| F66 | The real contract's held payments, with source and lookalike warning | `GET /chain/pending`, `NearViewClient`, `WalletCosign.tsx` | `server-api.test` | 10-wallet |
+| F67 | No wallet: nothing can be approved; Connect asks the wallet | `WalletCosign.tsx` | | 10-wallet |
+| F68 | A wallet that is not the owner account cannot approve | `WalletCosign.tsx` | | 10-wallet |
+| F69 | The owner's wallet signs one `cosign` call for that proposal | `WalletCosign.tsx` | | 10-wallet |
+| F70 | Approve and remember sets `remember` | `WalletCosign.tsx` | | 10-wallet |
+| F71 | A contract refusal returned as a value is shown as a refusal | `lib/outcome.ts` | `relayer-outcome.test` (same check, relayed path) | 10-wallet |
+| F72 | A wallet the owner declines in leaves the proposal untouched | `WalletCosign.tsx` | | 10-wallet |
+| F73 | Return from a redirect wallet reports what the chain did | `WalletCosign.tsx` | | 10-wallet |
+| F74 | Return after a refusal says the contract refused it | `lib/outcome.ts` | | 10-wallet |
+| F75 | A server with no testnet contract configured says so | `GET /chain/info` | `server-api.test` | 10-wallet |
+
 ## Not covered by a browser test
 
 - **The look of the animations.** F09 and F11 check they run and end correctly. Whether they match the reference video is a judgement by eye.

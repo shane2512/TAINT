@@ -28,6 +28,40 @@ export class MockContractClient implements ContractClient {
 const RPC = { testnet: "https://rpc.testnet.near.org", mainnet: "https://rpc.mainnet.near.org" } as const;
 const GAS = 100_000_000_000_000n; // 100 Tgas
 
+const mapPending = (rows: [number, any][]): PendingProposal[] =>
+  rows.map(([id, p]) => ({
+    proposalId: id,
+    proposalHash: p.hash,
+    action: p.action,
+    prov: p.prov,
+    flowHash: p.flow_hash,
+    createdAt: Number(BigInt(p.created_at) / 1_000_000n),
+  }));
+
+const mapBook = (rows: [string, any][]): BookEntry[] =>
+  rows.map(([address, e]) => ({ address, cap: BigInt(e.cap), expiresAt: Number(BigInt(e.expires_at) / 1_000_000n), learnedFrom: e.learned_from }));
+
+/** Reads the deployed contract with no key at all. */
+export class NearViewClient {
+  private provider: JsonRpcProvider;
+
+  constructor(private o: { network: "testnet" | "mainnet"; contractId: string; rpcUrl?: string }) {
+    this.provider = new JsonRpcProvider({ url: o.rpcUrl ?? RPC[o.network] });
+  }
+
+  private async view(methodName: string): Promise<any[]> {
+    return ((await this.provider.callFunction(this.o.contractId, methodName, {})) as any[] | undefined) ?? [];
+  }
+
+  async getPending(): Promise<PendingProposal[]> {
+    return mapPending(await this.view("get_pending"));
+  }
+
+  async getBook(): Promise<BookEntry[]> {
+    return mapBook(await this.view("get_book"));
+  }
+}
+
 export interface NearClientOptions {
   network: "testnet" | "mainnet";
   contractId: string;
@@ -66,25 +100,11 @@ export class NearContractClient implements ContractClient {
   }
 
   async getPending(): Promise<PendingProposal[]> {
-    const rows = (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pending", args: {} })) as [number, any][];
-    return rows.map(([id, p]) => ({
-      proposalId: id,
-      proposalHash: p.hash,
-      action: p.action,
-      prov: p.prov,
-      flowHash: p.flow_hash,
-      createdAt: Number(BigInt(p.created_at) / 1_000_000n),
-    }));
+    return mapPending((await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pending", args: {} })) as [number, any][]);
   }
 
   async getBook(): Promise<BookEntry[]> {
-    const rows = (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_book", args: {} })) as [string, any][];
-    return rows.map(([address, e]) => ({
-      address,
-      cap: BigInt(e.cap),
-      expiresAt: Number(BigInt(e.expires_at) / 1_000_000n),
-      learnedFrom: e.learned_from,
-    }));
+    return mapBook((await this.account.viewFunction({ contractId: this.contractId, methodName: "get_book", args: {} })) as [string, any][]);
   }
 
   async getPins(): Promise<string[]> {

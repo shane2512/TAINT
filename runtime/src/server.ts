@@ -17,7 +17,7 @@ import { describePending, formatNear } from "./cosign-view";
 import { parseAccount, parseAmountYocto } from "./handles";
 import { mode } from "./llm";
 import { MockContract, defaultMockConfig, type BookEntry, type PendingProposal } from "./mock-contract";
-import { MockContractClient } from "./near";
+import { MockContractClient, NearViewClient } from "./near";
 import { signOwnerMessage } from "./owner";
 import type { ArgProvenance, Provenance, ProposedAction } from "./proposal";
 import { provenanceLine } from "./provenance";
@@ -40,8 +40,19 @@ export interface ChainCosign {
   cosign(proposalId: number, proposalHash: string, remember: boolean): Promise<{ txHash: string; failure?: string }>;
 }
 
+/** Reads the real contract and needs no key: a wallet in the browser does the approving. */
+export interface ChainView {
+  network: string;
+  contractId: string;
+  /** The account the wallet has to be signed in as; the contract only takes cosign from it. */
+  ownerAccount: string;
+  getPending(): Promise<PendingProposal[]>;
+  getBook(): Promise<BookEntry[]>;
+}
+
 export interface ServerOptions {
   chain?: ChainCosign;
+  chainView?: ChainView;
   /** A real model with simulated payments, so free-text attacks work. Nothing touches a chain. */
   liveModel?: boolean;
   now?: () => number;
@@ -330,6 +341,18 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       if (req.method === "POST" && url.pathname === "/redteam") return await redteam(res);
       if (req.method === "POST" && url.pathname === "/replay") return await replay(res);
       if (req.method === "POST" && /^\/wallet\/(remember|forget|pin|unpin)$/.test(url.pathname)) return await walletWrite(url.pathname.slice(8), req, res);
+      if (req.method === "GET" && url.pathname === "/chain/info" && o.chainView) {
+        const { network, contractId, ownerAccount } = o.chainView;
+        return json(res, 200, { network, contractId, ownerAccount });
+      }
+      if (req.method === "GET" && url.pathname === "/chain/pending" && o.chainView) {
+        try {
+          const [held, book] = await Promise.all([o.chainView.getPending(), o.chainView.getBook()]);
+          return json(res, 200, held.map((p) => describePending(p, book.map((b) => b.address))));
+        } catch (e) {
+          return json(res, 502, { error: `could not read ${o.chainView.network}: ${(e as Error).message}` });
+        }
+      }
       if (req.method === "GET" && url.pathname === "/wallet") return json(res, 200, await walletView(req));
       if (req.method === "GET" && url.pathname === "/policy/cases") {
         const table = loadTable();
@@ -374,7 +397,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const port = Number(process.env.PORT ?? 3000);
   const publicDemo = process.env.PUBLIC_DEMO === "1";
   const host = process.env.HOST ?? "127.0.0.1";
-  createAppServer({ liveModel, publicDemo, trustProxy: process.env.TRUST_PROXY === "1", proxyKey: process.env.PROXY_KEY }).listen(port, host, () => {
+  const chainView = process.env.CHAIN_VIEW_CONTRACT
+    ? (() => {
+        const network = (process.env.NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
+        const client = new NearViewClient({ network, contractId: process.env.CHAIN_VIEW_CONTRACT!, rpcUrl: process.env.NEAR_RPC_URL });
+        return { network, contractId: process.env.CHAIN_VIEW_CONTRACT!, ownerAccount: process.env.CHAIN_VIEW_OWNER ?? "", getPending: () => client.getPending(), getBook: () => client.getBook() };
+      })()
+    : undefined;
+  createAppServer({ liveModel, publicDemo, chainView, trustProxy: process.env.TRUST_PROXY === "1", proxyKey: process.env.PROXY_KEY }).listen(port, host, () => {
     console.log(banner("none"));
     console.log(`TAINT API: http://127.0.0.1:${port}/   The pages are in landing/: npm run site`);
   });

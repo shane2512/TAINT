@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSharedMeta } from "../../../components/AppShell";
 import { api, ErrorNote, Icon, PageHead, useApi } from "../../../components/ui";
@@ -13,6 +14,9 @@ interface Pending {
   amountNear: string;
   accountCreated: string;
 }
+
+// The wallet libraries are only fetched when someone asks for them.
+const WalletCosign = dynamic(() => import("../../../components/WalletCosign"), { ssr: false });
 
 type Done = { kind: "ok"; text: string; explorer?: string } | { kind: "no"; text: string };
 
@@ -61,6 +65,7 @@ function Card({ item }: { item: Pending }) {
 
 export default function CosignPage() {
   const meta = useSharedMeta();
+  const [walletOpen, setWalletOpen] = useState(false);
   const { data, error, loading, reload } = useApi<Pending[]>("pending");
   const chain = meta && meta.network !== "none";
   return (
@@ -81,6 +86,14 @@ export default function CosignPage() {
         <p className="empty" data-testid="empty">Nothing is waiting for you. {chain ? null : <Link href="/demo">Run an attack to see one held <Icon name="ne" size={10} /></Link>}</p>
       )}
       <section aria-label="Pending proposals" className="helds">{data?.map((p) => <Card key={p.proposalId} item={p} />)}</section>
+
+      <section aria-label="Approve on testnet with your wallet" className="block">
+        <div className="block-head">
+          <h2 className="h-sm">APPROVE ON TESTNET WITH YOUR WALLET</h2>
+          <button className="btn ghost small" aria-expanded={walletOpen} onClick={() => setWalletOpen(!walletOpen)} data-testid="wallet-toggle">{walletOpen ? "HIDE" : "SHOW"}</button>
+        </div>
+        {walletOpen ? <WalletCosign /> : <p className="hint">The payments above are simulated. This section reads the real contract on testnet and has your own wallet sign the approval.</p>}
+      </section>
     </div>
   );
 }

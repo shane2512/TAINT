@@ -187,6 +187,49 @@ describe("no static pages", () => {
   });
 });
 
+describe("read-only chain view, for a wallet to approve against", () => {
+  const view = {
+    network: "testnet",
+    contractId: "taint-x.testnet",
+    ownerAccount: "owner-x.testnet",
+    getPending: async () => [
+      { proposalId: 4, proposalHash: "h4", action: { kind: "Transfer" as const, recipient: "acrne.testnet", token: null, amount: "400000000000000000000000" }, prov: { recipient: { class: "Untrusted" as const, source: "email:x" }, token: null, amount: { class: "Untrusted" as const, source: "email:x" } }, flowHash: "f", createdAt: 1 },
+    ],
+    getBook: async () => [{ address: "acme.testnet", cap: 10n ** 24n, expiresAt: 5, learnedFrom: "owner" }],
+  };
+
+  it("lists the contract's held payments with their source and lookalike warning, using no key", async () => {
+    await new Promise((r) => server.close(r));
+    await listen(createAppServer({ chainView: view }));
+    const items = await (await fetch(base + "/chain/pending")).json();
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ proposalId: 4, proposalHash: "h4", amountNear: "0.4", diff: "acrne.testnet vs acme.testnet: 2 characters differ" });
+    expect(items[0].sourceLine).toContain("email:x");
+  });
+
+  it("says which contract and which owner account the wallet must use", async () => {
+    await new Promise((r) => server.close(r));
+    await listen(createAppServer({ chainView: view }));
+    expect(await (await fetch(base + "/chain/info")).json()).toEqual({ network: "testnet", contractId: "taint-x.testnet", ownerAccount: "owner-x.testnet" });
+  });
+
+  it("is absent unless configured, and is served by the public demo too", async () => {
+    expect((await fetch(base + "/chain/info")).status).toBe(404);
+    expect((await fetch(base + "/chain/pending")).status).toBe(404);
+    await new Promise((r) => server.close(r));
+    await listen(createAppServer({ chainView: view, publicDemo: true }));
+    expect((await fetch(base + "/chain/info")).status).toBe(200);
+  });
+
+  it("reports a node that cannot be reached instead of an empty list", async () => {
+    await new Promise((r) => server.close(r));
+    await listen(createAppServer({ chainView: { ...view, getPending: async () => { throw new Error("rpc down"); } } }));
+    const r = await fetch(base + "/chain/pending");
+    expect(r.status).toBe(502);
+    expect((await r.json()).error).toMatch(/rpc down/);
+  });
+});
+
 describe("chain mode", () => {
   const chain: ChainCosign = {
     network: "testnet",

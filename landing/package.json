@@ -11,6 +11,10 @@
     "predev": "node scripts/sync-data.mjs"
   },
   "dependencies": {
+    "@near-js/transactions": "^2.5.1",
+    "@near-wallet-selector/core": "^10.1.4",
+    "@near-wallet-selector/modal-ui": "^10.1.4",
+    "@near-wallet-selector/my-near-wallet": "^10.1.4",
     "gsap": "^3.13.0",
     "lenis": "^1.3.11",
     "next": "^15.5.0",

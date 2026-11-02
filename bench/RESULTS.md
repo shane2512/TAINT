@@ -132,6 +132,14 @@ Contract hardening (Rust, with the TypeScript mock kept identical; shared table 
 
 Still open: the set of used flow hashes only grows, so a leaked worker key can slowly lock the contract's balance in storage. It is bounded by the gas the attacker pays, not by the contract.
 
+## 2026-11-02 Wallet-signed co-sign
+
+The co-sign page no longer needs a server-held owner key for the testnet path. `GET /chain/pending` reads the deployed contract with no key (`NearViewClient`), and the page asks the owner's wallet (NEAR Wallet Selector, MyNearWallet) to sign one `cosign` transaction. The page checks the connected account is the owner account and reads the contract's answer, so a refusal returned as an ordinary value (over the daily cap) is shown as a refusal.
+
+Checked: 10 browser tests with a fake wallet and a stub RPC node (the call the wallet is asked to sign, the wrong account, a refusal, a declined signature, returning from a redirect wallet); against the real testnet contract, the page listed a real held payment (proposal 8) with its source line and the real wallet modal opened.
+
+**Not checked: a real signature.** Nobody has yet signed with the real owner wallet. The owner key has to be imported into a testnet wallet for that. The relayed demo-key path (`npm run cosign-web`) is unchanged and is what produced the transactions linked above.
+
 ## Not done (needs credentials or tooling)
 
 
