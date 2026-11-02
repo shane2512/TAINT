@@ -12,7 +12,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
 | Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
-| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 70 unit tests, plus the shared 24-case rule table, which the TypeScript stand-in also passes. **The deployed testnet contract has this hardening** (upgraded 2026-11-02, state carried over; see bench/RESULTS.md). Its full-access key is still held|
+| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 70 unit tests, plus the shared 24-case rule table, which the TypeScript stand-in also passes. **The deployed testnet contract has this hardening** (upgraded 2026-11-02, state carried over; see bench/RESULTS.md). **The contract account has no access keys** (its last key was deleted on 2026-11-02, so no key can bypass the policy). Only the owner account can change the rules, by calling `upgrade`, or move funds beyond the worker's cap, by calling `withdraw`|
 | `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done; decided to stub** ([decision record](docs/decisions/0001-attestation.md)). The spike was not run. Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the API against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` uses the MOCK approval. Mainnet not run |
@@ -118,7 +118,7 @@ Writing and reviewing these attacks found three real gaps, now fixed: a fooled p
 Deploying it:
 
 - Call `new` in the **same batch as the deploy**. It refuses any caller but the contract account, so nobody can front-run it and become the owner.
-- Deleting the contract account's full-access key makes it permanent. There is **no code upgrade path**, so a bug is then permanent too. Keep a full-access key until you have verified the deployment, and delete it only for the final claim.
+- The contract account's last access key was deleted on 2026-11-02, after the owner's `upgrade` call had been run on chain and shown to work. From then on the only way to change the contract is the owner account calling `upgrade`, which deploys code and runs `migrate`. A future version must keep `migrate` able to read the layout it replaces. The owner is trusted: it can already withdraw everything.
 - The owner is an *account*, so rotate the owner's keys at the account level if they leak. There is no `set_owner`.
 - Build the wasm with the committed `contract/.cargo/config.toml` (it sets `--cfg near`) or with `cargo near build`. A plain build without that flag turns every contract panic into a bare "unreachable" trap, hiding messages like `owner only`.
 - Held proposals expire after 15 minutes and are deleted after 24 hours. At most 100 can be pending, and a provenance source label is limited to 128 bytes.

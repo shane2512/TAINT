@@ -8,8 +8,11 @@ const TX = [
   ["Relayer submits the owner's delegate: executed", "Hob69cKSdDtSXhS7eYYDp3Ds65yE6MXmBRxNAcrmHiAc"],
   ["The same delegate submitted again: rejected by nonce", "CXDDzMaZVw71CvEKGAUvvF3r6nTHCrjZvCLdwFHcLT7A"],
   ["Approved from the co-sign page: executed", "CquAtBH2iNFhqcjPQN5aULRoAq35FsjHhG2LNowEYAXg"],
+  ["Contract upgraded with the hardening: deploy and migrate, state carried over", "3RHBUUfm8CVEyPDCs4yvt8n8bhVqTW5rdhhbqSfbcYRy"],
+  ["The owner's upgrade call: deploy and migrate, state identical", "13hZbw3G6cyGtyGJTPjbAAEgerm6DjLfyEjFwPam8qLB"],
+  ["The contract account's last access key deleted", "FdCzajuKncqqYPuohgqyHWUjPeVY3ymma4uw6BoCDjMP"],
 ];
-const NOT_DONE = ["Mainnet: no transaction has run there.", "A real wallet signature: built and tested with a fake wallet, and the real wallet modal opens, but nobody has signed with the real owner wallet yet.", "TEE attestation: stubbed. The worker is a plain registered key.", "Deleting the contract's full-access key: until then its holder can bypass the policy."];
+const NOT_DONE = ["Mainnet: no transaction has run there.", "A real wallet signature: built and tested with a fake wallet, and the real wallet modal opens, but nobody has signed with the real owner wallet yet.", "TEE attestation: stubbed. The worker is a plain registered key."];
 
 export default function ResultsPage() {
   const r = liveReplay();

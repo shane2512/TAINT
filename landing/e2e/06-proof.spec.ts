@@ -64,9 +64,11 @@ test.describe("results", () => {
 
   test("[F48] testnet transactions link out, and what is not done is stated", async ({ page }) => {
     const links = page.getByTestId("tx-list").getByRole("link");
-    await expect(links).toHaveCount(4);
+    await expect(links).toHaveCount(7);
     await expect(links.first()).toHaveAttribute("href", /^https:\/\/testnet\.nearblocks\.io\/txns\//);
     const notDone = page.getByTestId("not-done");
-    for (const t of ["Mainnet", "real wallet signature", "TEE attestation", "full-access key"]) await expect(notDone).toContainText(t);
+    for (const t of ["Mainnet", "real wallet signature", "TEE attestation"]) await expect(notDone).toContainText(t);
+    await expect(notDone).not.toContainText("full-access key"); // done on 2026-11-02, so it is in the transaction list instead
+    await expect(page.getByTestId("tx-list")).toContainText("last access key deleted");
   });
 });

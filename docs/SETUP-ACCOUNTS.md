@@ -8,7 +8,7 @@ Pick a short unique prefix, for example `myname` (account names are global, so a
 
 | Role | Example id | What it does | Key it needs | Balance it needs |
 |---|---|---|---|---|
-| contract | `taint-myname.testnet` | holds the funds and the `taint.near` contract | full access (it deploys) | 15 NEAR or more (the contract's code is about 570 KB, which locks about 6 NEAR, plus funds to spend) |
+| contract | `taint-myname.testnet` | holds the funds and the `taint.near` contract | no keys (the last one was deleted on 2026-11-02; see bench/RESULTS.md) | 15 NEAR or more (the contract's code is about 570 KB, which locks about 6 NEAR, plus funds to spend) |
 | mockdex | `mockdex-myname.testnet` | testnet stand-in for swaps (NEAR Intents has no testnet) | full access | 3 NEAR or more |
 | owner | `owner-myname.testnet` | approves held payments (demo only) | any | 0.5 NEAR or more |
 | worker | `worker-myname.testnet` | the agent's account, calls `propose` | any (a function-call key limited to the contract is safest; full access works for now) | 1 NEAR or more, for gas |

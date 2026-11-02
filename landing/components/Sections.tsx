@@ -236,7 +236,7 @@ export function Modes() {
             <Link className="btn solid" href="/cosign">Approve with your wallet <Icon name="right" size={12} /></Link>
           </article>
         </div>
-        <p className="fine" data-reveal>Neither mode touches mainnet. The attestation is stubbed and the contract account still holds its key; both are stated in the README.</p>
+        <p className="fine" data-reveal>Neither mode touches mainnet. The attestation is stubbed. The contract account has no keys, so only the owner can change it; both are stated in the README.</p>
       </div>
     </section>
   );
@@ -293,7 +293,7 @@ const FAQ = [
   ["What does TAINT stop?", "A model fooled by text it read, such as an email, a post or a token listing, paying an account you never chose. Values from that text stay untrusted and wait for your co-sign."],
   ["Why not just an allowlist?", "An allowlist checks where money goes, so it cannot tell who chose an allowed account. In the live replay it also blocked every legitimate payment."],
   ["Where do my keys go?", "The worker key only proposes, and its spending is capped. Your owner key stays in your wallet, which signs the co-sign. This site holds no key."],
-  ["What is not done yet?", "Mainnet, a real TEE attestation, and deleting the contract's full-access key. Until that key is gone, its holder can bypass the policy. The decision record says so."],
+  ["What is not done yet?", "Mainnet and a real TEE attestation. The contract account's last key was deleted, so no key can bypass the policy, but the owner account can still upgrade the contract and withdraw. The decision record says so."],
   ["What does the benchmark prove?", "That with one live model and four fixtures, TAINT held or did nothing on attacks and finished the legitimate payments. It does not prove safety against every attack."],
   ["Is it really open?", "Yes. MIT licensed: the runtime, the Rust contract and every result file are in one repository."],
 ];

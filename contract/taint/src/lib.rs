@@ -8,6 +8,7 @@
 pub mod policy;
 pub mod types;
 
+use near_sdk::borsh::BorshDeserialize;
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::LookupSet;
 use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise};
@@ -133,7 +134,12 @@ impl Taint {
     #[init(ignore_state)]
     pub fn migrate() -> Self {
         require!(env::predecessor_account_id() == env::current_account_id(), "migrate is private");
-        let old: OldTaint = env::state_read().unwrap_or_else(|| env::panic_str("no state to migrate"));
+        let bytes = env::storage_read(b"STATE").unwrap_or_else(|| env::panic_str("no state to migrate"));
+        // `upgrade` always calls this, including when the new code keeps the same layout: then there is nothing to do.
+        if let Ok(current) = Taint::try_from_slice(&bytes) {
+            return current;
+        }
+        let old = OldTaint::try_from_slice(&bytes).unwrap_or_else(|_| env::panic_str("state is neither the current nor the previous layout"));
         Self {
             owner: old.owner,
             mockdex: old.mockdex,

@@ -618,3 +618,29 @@ impl Taint {
         self.put_entry(acct(address), None, None, "owner".into());
     }
 }
+
+#[test]
+fn migrate_leaves_state_that_is_already_current_exactly_as_it_is() {
+    // `upgrade` always calls `migrate`, including when the new code has the same state layout as the old.
+    let mut c = setup();
+    c.pin_account(acct("acme.near"));
+    c.next_id = 12;
+    c.spent.push((T0, 7));
+    c.paid.insert(acct("vendor.near"), vec![(T0, 7)]);
+    near_sdk::env::state_write(&c);
+    ctx("taint.near", T0, 1000);
+    let migrated = Taint::migrate();
+    assert_eq!(migrated.next_id, 12);
+    assert_eq!(migrated.spent, vec![(T0, 7)]);
+    assert_eq!(migrated.paid.get(&acct("vendor.near")), Some(&vec![(T0, 7)]));
+    assert!(migrated.pins.contains(&acct("acme.near")));
+    assert!(migrated.workers.contains(&acct("worker.near")));
+}
+
+#[test]
+#[should_panic(expected = "neither")]
+fn migrate_refuses_state_it_does_not_recognise() {
+    ctx("taint.near", T0, 1000);
+    near_sdk::env::storage_write(b"STATE", &[1, 2, 3]);
+    Taint::migrate();
+}
