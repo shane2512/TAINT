@@ -70,7 +70,7 @@ export default function CosignPage() {
   const chain = meta && meta.network !== "none";
   return (
     <div>
-      <PageHead kicker="HELD BY THE CONTRACT / WAITING FOR YOU" title="Pending co-signs.">
+      <PageHead title="Pending co-signs.">
         TAINT held these because a value came from text you did not write. Check where it came from before you approve. Held proposals expire after 15 minutes.
       </PageHead>
       {meta && (

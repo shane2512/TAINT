@@ -122,7 +122,7 @@ test.describe("landing page", () => {
   test("[F76] the two modes lead to the demo and to the wallet page", async ({ page }) => {
     await page.locator("#modes").scrollIntoViewIfNeeded();
     await expect(page.getByTestId("mode-sim")).toContainText("SIMULATED");
-    await expect(page.getByTestId("mode-testnet")).toContainText("5,00");
+    await expect(page.getByTestId("mode-testnet")).toContainText("5 NEAR daily cap");
     await expect(page.getByTestId("mode-testnet")).toContainText("Your wallet signs, no key on this site");
     await page.getByTestId("mode-testnet").getByRole("link", { name: /Approve with your wallet/ }).click();
     await expect(page).toHaveURL(/\/cosign$/);

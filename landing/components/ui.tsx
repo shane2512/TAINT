@@ -86,10 +86,9 @@ export function useApi<T>(path: string) {
   return { data, error, loading, reload, setData };
 }
 
-export function PageHead({ kicker, title, children }: { kicker: string; title: string; children?: React.ReactNode }) {
+export function PageHead({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
     <header className="page-head">
-      <p className="eyebrow chip"><i />{kicker}</p>
       <div className="titlebar">
         <h1>{title}</h1>
         {children && <div className="aside">{children}</div>}

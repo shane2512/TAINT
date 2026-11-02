@@ -88,7 +88,7 @@ export default function PolicyDesk({ caseCount }: { caseCount: number }) {
           </div>
         </div>
         <div className="panel">
-          <div className="tabs" role="tablist">{TABS.map((t, i) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}><small>{String(i + 1).padStart(2, "0")}</small>{t}</button>)}</div>
+          <div className="tabs" role="tablist">{TABS.map((t, i) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</div>
           {tab === "ACTION" && (
             <div className="pbody">
               <Seg label="KIND" value={kind} options={["TRANSFER", "SWAP"]} onChange={setKind} />

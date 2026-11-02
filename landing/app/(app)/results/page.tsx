@@ -20,7 +20,7 @@ export default function ResultsPage() {
   const ids = Object.keys(r.matrix);
   return (
     <div>
-      <PageHead kicker="WHAT WE MEASURED / AND WHAT WE DID NOT" title="The results.">
+      <PageHead title="The results.">
         Read from the saved run files when this site was built. One model, one provider, four fixtures chosen by the authors.
       </PageHead>
 

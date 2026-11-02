@@ -34,7 +34,7 @@ export default function WalletPage() {
   const pct = w?.globalCapNear ? Math.min(100, (Number(w.spent24hNear) / Number(w.globalCapNear)) * 100) : 0;
   return (
     <div>
-      <PageHead kicker="WHAT THE CONTRACT WILL PAY WITHOUT ASKING" title="The wallet.">
+      <PageHead title="The wallet.">
         A recipient in the address book or registered by a pinned account can be paid inside its cap. Everything else waits for a co-sign.
       </PageHead>
       {loadError && <ErrorNote>{loadError}</ErrorNote>}

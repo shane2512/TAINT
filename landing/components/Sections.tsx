@@ -9,9 +9,6 @@ import { api, Icon, Mark } from "./ui";
 
 /* ---------- small pieces ---------- */
 
-function Chip({ children }: { children: React.ReactNode }) {
-  return <p className="chip" data-reveal><i />{children}</p>;
-}
 
 function Lines({ lines, as: Tag = "h2", className }: { lines: string[]; as?: "h1" | "h2"; className?: string }) {
   return (
@@ -53,10 +50,9 @@ export function Hero() {
       <div className="hero-glow" aria-hidden />
       <div className="frame">
         <i className="guide gl" /><i className="guide gr" />
-        <div className="hatch h1" aria-hidden><b className="x a">+</b><b className="x b">+</b></div>
+        <div className="hatch h1" aria-hidden></div>
         <div className="hero-copy">
           <div>
-            <Chip>PROVENANCE-GATED WALLET</Chip>
             <Lines as="h1" lines={["Check who decided", "every payment."]} />
           </div>
           <div className="hero-side" data-reveal="0.15">
@@ -67,7 +63,7 @@ export function Hero() {
             </div>
           </div>
         </div>
-        <div className="hatch h2" aria-hidden><b className="x a">+</b><b className="x b">+</b></div>
+        <div className="hatch h2" aria-hidden></div>
       </div>
       <div className="hero-art" aria-hidden>
         <Halftone scene="dusk" cell={14} seed={5} className="hero-dots" rise />
@@ -180,7 +176,6 @@ export function How() {
   return (
     <section id="how" className="sec">
       <div className="frame">
-        <Chip>HOW IT WORKS</Chip>
         <Lines lines={["Say who decided.", "The contract answers."]} />
         <ol className="steps" data-stagger>
           {STEPS.map(([n, t, d]) => <li key={n}><span className="n">{n}</span><h3>{t}</h3><p>{d}</p></li>)}
@@ -204,14 +199,13 @@ export function Modes() {
   return (
     <section id="modes" className="sec modes">
       <div className="frame">
-        <Chip>MODES</Chip>
         <Lines lines={["Choose how you", "run it."]} />
         <div className="plans" data-stagger>
           <article className="plan dark" data-testid="mode-sim">
             <p className="plan-tag"><i />SIMULATED</p>
-            <p className="plan-price">0,00<span>/payment</span></p>
+            <h3 className="plan-name">No wallet needed</h3>
             <p className="plan-lede">Try it with no wallet. Three agents, one attack, the real rules. Payments are simulated.</p>
-            <h4>What you get:</h4>
+            <h4>Includes</h4>
             <ul>
               <li><Icon name="right" size={12} />Rob the Pet: three wallets, five fixtures</li>
               <li><Icon name="right" size={12} />The policy desk and the shared rule table</li>
@@ -223,9 +217,9 @@ export function Modes() {
           <article className="plan hot" data-testid="mode-testnet">
             <div className="plan-bg" aria-hidden />
             <p className="plan-tag"><i />TESTNET</p>
-            <p className="plan-price">5,00<span>NEAR/day</span></p>
+            <h3 className="plan-name">Your wallet, a 5 NEAR daily cap</h3>
             <p className="plan-lede">The real contract. Your own wallet signs the approval. A leaked worker key can send at most the daily cap.</p>
-            <h4>What you get:</h4>
+            <h4>Includes</h4>
             <ul>
               <li><Icon name="right" size={12} />Held payments read from the contract</li>
               <li><Icon name="right" size={12} />Your wallet signs, no key on this site</li>
@@ -268,7 +262,6 @@ export function Results({ s }: { s: ResultStats }) {
   return (
     <section id="results" className="sec">
       <div className="frame">
-        <Chip>RESULTS</Chip>
         <h2 className="two" data-lines aria-label="Tested against a real model, with the misses published.">
           <span className="ln"><span>Tested against a real model, three wallets and one attack.</span></span>{" "}
           <span className="ln dim"><span>The misses are published too.</span></span>
@@ -276,10 +269,9 @@ export function Results({ s }: { s: ResultStats }) {
         <div className="statgrid" data-stagger data-testid="statgrid">
           <Stat value={s.held} label={`attack runs held, of ${s.heldOf} (live model)`} art="orb" />
           <Stat value={s.redFail} label={`failures in ${s.redOf} live red-team attempts`} icon={<Brackets>{IcCheck}</Brackets>} />
-          <figure className="cell quote wide"><blockquote>“Allowlists check where money goes; TAINT checks who decided.”</blockquote><figcaption><b>The idea</b><small>README</small></figcaption></figure>
-          <figure className="cell quote wide"><blockquote>“One model, one provider, four fixtures the authors chose. The misses are in the log.”</blockquote><figcaption><b>What the benchmark does not prove</b><small>bench/RESULTS.md</small></figcaption></figure>
           <Stat value={s.legit} label={`legitimate payments done, of ${s.legitOf}`} icon={<Brackets>{IcTimer}</Brackets>} />
           <Stat value={s.cases} label="shared policy cases, one table for Rust and TypeScript" art="waves" />
+          <figure className="cell quote wide"><blockquote>“One model, one provider, four fixtures the authors chose. The misses are in the log.”</blockquote><figcaption><b>What the benchmark does not prove</b><small>bench/RESULTS.md</small></figcaption></figure>
         </div>
         <p className="fine" data-reveal>From the saved run files when this site was built. <Link href="/results">Read every row <Icon name="ne" size={11} /></Link></p>
       </div>
@@ -307,7 +299,6 @@ export function Faq() {
   return (
     <section id="faq" className="sec">
       <div className="frame">
-        <Chip>FAQS</Chip>
         <Lines lines={["Straight answers,", "including the awkward ones."]} />
         <div className="faq" data-stagger>
           {FAQ.map(([q, a], i) => (
@@ -329,7 +320,6 @@ export function Cta() {
     <section id="try" className="cta">
       <div className="frame cta-in">
         <div className="cta-copy">
-          <Chip>TRY IT</Chip>
           <Lines lines={["Let's try", "to rob it"]} />
           <p data-reveal>Send a real attack at three wallets built on the same model. See which one pays, and read why the others did not.</p>
           <Link className="btn solid" href="/results" data-reveal="0.1">View results <Icon name="right" size={12} /></Link>

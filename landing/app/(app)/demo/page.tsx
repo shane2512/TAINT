@@ -57,7 +57,7 @@ export default function DemoPage() {
   const held = results?.[2]?.label === "pending";
   return (
     <div>
-      <PageHead kicker="THREE WALLETS / ONE MODEL / ONE ATTACK" title="Rob the Pet.">
+      <PageHead title="Rob the Pet.">
         Each wallet gets the same message and the same model. Allowlists check where money goes. TAINT checks who decided. Payments here are simulated.
       </PageHead>
 

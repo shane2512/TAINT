@@ -5,7 +5,7 @@ import { attempts, liveRedteams } from "../../../lib/data";
 export default function RedteamPage() {
   return (
     <div>
-      <PageHead kicker="TWELVE ATTACKS / A FULLY FOOLED MODEL" title="The red team.">
+      <PageHead title="The red team.">
         This run assumes the model believed every attack and hands it the attacker&apos;s output. It tests the deterministic layers: parsers, handle typing, literal grounding and the contract gate.
       </PageHead>
       <RedteamRun attempts={attempts()} />
