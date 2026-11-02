@@ -50,7 +50,7 @@ export function Hero() {
       <div className="hero-glow" aria-hidden />
       <div className="frame">
         <i className="guide gl" /><i className="guide gr" />
-        <div className="hatch h1" aria-hidden></div>
+        
         <div className="hero-copy">
           <div>
             <Lines as="h1" lines={["Check who decided", "every payment."]} />
@@ -63,7 +63,12 @@ export function Hero() {
             </div>
           </div>
         </div>
-        <div className="hatch h2" aria-hidden></div>
+        <ol className="receipt" aria-label="Example proposal: a transfer held because its recipient came from outside text">
+          <li><small>Action</small><b>Transfer</b></li>
+          <li className="untrusted"><small>Recipient</small><b>attacker.testnet</b><em>Untrusted · x.com/@attacker</em></li>
+          <li className="owner"><small>Amount</small><b>1.5 NEAR</b><em>Owner · your signed instruction</em></li>
+          <li className="ruling"><small>Contract says</small><b>Held for your co-sign</b></li>
+        </ol>
       </div>
       <div className="hero-art" aria-hidden>
         <Halftone scene="dusk" cell={14} seed={5} className="hero-dots" rise />
