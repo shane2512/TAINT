@@ -1,6 +1,6 @@
 # 0001: Worker attestation is stubbed
 
-Status: decided 2026-11-01. Mode: `ATTESTATION=stub` (the default). Every command prints `ATTESTATION STUBBED`.
+Status: decided 2026-11-01 (see [0002](0002-attestation-requirements.md) for what real attestation needs, checked 2026-11-02). Mode: `ATTESTATION=stub` (the default). Every command prints `ATTESTATION STUBBED`.
 
 ## What we did not do
 
