@@ -7,12 +7,16 @@
 
 pub mod policy;
 pub mod types;
+pub mod attest;
 
 use near_sdk::borsh::BorshDeserialize;
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::LookupSet;
 use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise};
+use attest::{AttestState, Ppid, Real, Verifier};
 use policy::{evaluate, Decision, PolicyView};
+use shade_attestation::attestation::DstackAttestation;
+use shade_attestation::measurements::FullMeasurementsHex;
 use std::collections::{BTreeMap, BTreeSet};
 use types::{ActionKind, ArgProvenance, ProposalOutcome, ProposedAction, TrustClass};
 
@@ -34,6 +38,26 @@ const MIGRATE_GAS: Gas = Gas::from_tgas(100);
 /// Payments kept in the rolling window. Every call walks this list, so a leaked worker key cannot make it so long
 /// that the owner's own co-sign runs out of gas, or lock the balance in storage with a flood of 1-yocto payments.
 const MAX_SPENT: usize = 1000;
+/// Storage a registration is expected to use; the registering worker attaches at least this much.
+const REGISTER_BYTES: u128 = 700;
+
+#[near(serializers = [json])]
+pub struct AgentView {
+    pub measurements: FullMeasurementsHex,
+    pub ppid: Ppid,
+    pub valid_until_ms: U64,
+    /// False once expired or once the owner has withdrawn an approval it depended on.
+    pub valid: bool,
+}
+
+#[near(serializers = [json])]
+pub struct AttestationView {
+    pub require_tee: bool,
+    pub expiry_ms: U64,
+    pub approved_measurements: Vec<FullMeasurementsHex>,
+    pub approved_ppids: Vec<Ppid>,
+    pub agents: Vec<(AccountId, AgentView)>,
+}
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
@@ -212,6 +236,69 @@ impl Taint {
         self.cfg = config;
     }
 
+    // ---- worker attestation (see attest.rs) ----
+
+    /// Approve a set of code measurements. A worker has to be running exactly this code to register.
+    pub fn approve_measurements(&mut self, measurements: FullMeasurementsHex) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.approve_measurements(measurements);
+        s.save();
+    }
+
+    /// Withdrawing an approval also revokes the workers that depended on it, the next time they are used.
+    pub fn remove_measurements(&mut self, measurements: FullMeasurementsHex) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.remove_measurements(&measurements);
+        s.save();
+    }
+
+    /// Approve the hardware (Intel PPID) workers may run on.
+    pub fn approve_ppids(&mut self, ppids: Vec<Ppid>) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.approve_ppids(ppids);
+        s.save();
+    }
+
+    pub fn remove_ppids(&mut self, ppids: Vec<Ppid>) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.remove_ppids(&ppids);
+        s.save();
+    }
+
+    /// When on, a plain owner-registered worker key stops counting: only attested workers can propose.
+    pub fn set_require_tee(&mut self, require_tee: bool) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.require_tee = require_tee;
+        s.save();
+    }
+
+    /// How long a registration lasts. 0 restores the default of 24 hours.
+    pub fn set_attestation_expiry_ms(&mut self, expiry_ms: U64) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.expiry_ms = expiry_ms.0;
+        s.save();
+    }
+
+    pub fn remove_agent(&mut self, account_id: AccountId) {
+        self.only_owner();
+        let mut s = AttestState::load();
+        s.agents.remove(&account_id);
+        s.save();
+    }
+
+    /// Called by the worker itself, from the implicit account whose key the TEE generated. Needs roughly 300 Tgas, and a
+    /// deposit that covers the storage of the registration.
+    #[payable]
+    pub fn register_attested_worker(&mut self, attestation: DstackAttestation) -> bool {
+        self.register_with(attestation, &Real)
+    }
+
     /// Approve a counterparty. Defaults to the configured cap and lifetime.
     pub fn remember(&mut self, address: AccountId, cap: Option<U128>, ttl_ns: Option<U64>) {
         self.only_owner();
@@ -280,7 +367,7 @@ impl Taint {
     // ---- worker ----
 
     pub fn propose(&mut self, action: ProposedAction, prov: ArgProvenance, flow_hash: String) -> ProposalOutcome {
-        require!(self.workers.contains(&env::predecessor_account_id()), "worker only");
+        require!(self.is_active_worker(&env::predecessor_account_id()), "worker only");
         require!(flow_hash.len() <= MAX_FLOW_HASH_LEN, "flow_hash too long");
         for p in [&prov.recipient, &prov.token].into_iter().flatten().chain([&prov.amount]) {
             require!(p.source.len() <= MAX_SOURCE_LEN, "source too long");
@@ -326,7 +413,23 @@ impl Taint {
     // ---- views ----
 
     pub fn is_worker(&self, account: AccountId) -> bool {
-        self.workers.contains(&account)
+        self.is_active_worker(&account)
+    }
+
+    pub fn get_attestation(&self) -> AttestationView {
+        let s = AttestState::load();
+        let now = env::block_timestamp_ms();
+        AttestationView {
+            require_tee: s.require_tee,
+            expiry_ms: U64(s.expiry()),
+            agents: s
+                .agents
+                .iter()
+                .map(|(id, a)| (id.clone(), AgentView { measurements: a.measurements.clone(), ppid: a.ppid.clone(), valid_until_ms: U64(a.valid_until_ms), valid: s.is_valid(id, now) }))
+                .collect(),
+            approved_measurements: s.measurements,
+            approved_ppids: s.ppids,
+        }
     }
 
     pub fn get_book(&self) -> Vec<(AccountId, BookEntry)> {
@@ -361,6 +464,23 @@ impl Taint {
     fn spendable(&self) -> NearToken {
         let reserve = env::storage_byte_cost().saturating_mul(env::storage_usage() as u128);
         env::account_balance().saturating_sub(reserve)
+    }
+
+    /// An owner-registered key (unless TEE is required) or a worker whose attestation is current.
+    fn is_active_worker(&self, who: &AccountId) -> bool {
+        let s = AttestState::load();
+        (!s.require_tee && self.workers.contains(who)) || s.is_valid(who, env::block_timestamp_ms())
+    }
+
+    fn register_with(&mut self, attestation: DstackAttestation, verifier: &impl Verifier) -> bool {
+        let storage = env::storage_byte_cost().saturating_mul(REGISTER_BYTES);
+        require!(env::attached_deposit() >= storage, "attach a deposit that covers the storage of the registration");
+        let mut s = AttestState::load();
+        if let Err(e) = s.register(&env::predecessor_account_id(), &attestation, env::block_timestamp_ms(), verifier) {
+            env::panic_str(&e);
+        }
+        s.save();
+        true
     }
 
     fn take_id(&mut self) -> u64 {
@@ -463,6 +583,8 @@ fn do_upgrade() {
         .as_return();
 }
 
+#[cfg(test)]
+mod attest_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

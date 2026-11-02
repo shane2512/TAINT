@@ -1,6 +1,27 @@
 # 0002: What real worker attestation needs, checked against the current docs
 
-Status: researched 2026-11-02. **Not built.** Attestation is still stubbed ([0001](0001-attestation.md)); every command still prints `ATTESTATION STUBBED`.
+Status: researched 2026-11-02. **The contract side is built and tested (not deployed); the worker side is not.** Attestation is still stubbed ([0001](0001-attestation.md)); every command still prints `ATTESTATION STUBBED`.
+
+## Update, same day: what was built
+
+With the owner's approval, LLVM 23.1.4 was installed (winget, for `clang`) and both contracts were pinned to `near-sdk =5.26.1`. All earlier Rust tests still pass on it. `shade-attestation 0.2.0` then builds for wasm.
+
+`taint.near` now has (`contract/taint/src/attest.rs`):
+- owner calls `approve_measurements`, `remove_measurements`, `approve_ppids`, `remove_ppids`, `set_require_tee`, `set_attestation_expiry_ms`, `remove_agent`;
+- `register_attested_worker(attestation)`, payable, called by the worker's own implicit account: it must be an implicit account, the quote's report data must be that account's key, and the owner must have approved measurements and PPIDs; the check is the crate's `DstackAttestation::verify`;
+- registrations expire (24 hours by default) and are re-checked against the owner's current approvals on every `propose`, so withdrawing an approval revokes the workers that depended on it;
+- `set_require_tee(true)` makes plain owner-registered keys stop working, so only attested workers can propose;
+- a view, `get_attestation`.
+
+Everything is stored under one storage key, so the contract's state layout did not change and no migration is needed.
+
+**Tested (18 new unit tests, 90 in all):** implicit-account rule, deposit, owner-only on every setting, the report data passed to the check is the account's key, expiry and renewal, revocation by removing an approval, the worker bound, and gating of `propose`. **Not tested, because it needs a real Intel TDX quote:** a genuine attestation being accepted. The tests use a stand-in verifier for that case. The real verifier is tested only in that it refuses a fake quote.
+
+**Cost:** the wasm grows from about 601 KB to 1.58 MB, which locks roughly 10 more NEAR in storage. The testnet contract holds about 17.7 NEAR, so after the upgrade only about 1.8 NEAR would be spendable until it is topped up. Gas for a real verification has not been measured.
+
+## What is still needed
+
+Items 3 and 4 below, and the order of work from step 3 on. Items 1 and 2 are done.
 
 0001 said the Shade Agent details were unverified. They are now read, from the current official sources (the NearDeFi `shade-agent-template` README, the `shade-agent-framework` README, the `shade-attestation` crate README and the template contract source, all fetched 2026-11-02). Nothing below was run by us.
 
