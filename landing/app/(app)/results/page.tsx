@@ -9,7 +9,7 @@ const TX = [
   ["The same delegate submitted again: rejected by nonce", "CXDDzMaZVw71CvEKGAUvvF3r6nTHCrjZvCLdwFHcLT7A"],
   ["Approved from the co-sign page: executed", "CquAtBH2iNFhqcjPQN5aULRoAq35FsjHhG2LNowEYAXg"],
 ];
-const NOT_DONE = ["Mainnet: no transaction has run there.", "Wallet signing in the browser: the co-sign page uses a demo owner key.", "TEE attestation: stubbed. The worker is a plain registered key.", "Deleting the contract's full-access key: until then its holder can bypass the policy."];
+const NOT_DONE = ["Mainnet: no transaction has run there.", "A real wallet signature: built and tested with a fake wallet, and the real wallet modal opens, but nobody has signed with the real owner wallet yet.", "TEE attestation: stubbed. The worker is a plain registered key.", "Deleting the contract's full-access key: until then its holder can bypass the policy."];
 
 export default function ResultsPage() {
   const r = liveReplay();
@@ -17,12 +17,12 @@ export default function ResultsPage() {
   const ids = Object.keys(r.matrix);
   return (
     <div>
-      <PageHead kicker="WHAT WE MEASURED / AND WHAT WE DID NOT" title="THE RESULTS.">
+      <PageHead kicker="WHAT WE MEASURED / AND WHAT WE DID NOT" title="The results.">
         Read from the saved run files when this site was built. One model, one provider, four fixtures chosen by the authors.
       </PageHead>
 
       <section className="block" aria-label="Live model replay">
-        <h2 className="h-sm">LIVE-MODEL REPLAY</h2>
+        <h2 className="h-sm">Live-model replay</h2>
         <p className="hint">{r.model}, {r.runs} runs per fixture, {r.total} agent runs, {r.errors} error rows. The model was real and the payments were simulated. Saved {r.at.slice(0, 10)}.</p>
         <div className="table-wrap">
           <table data-testid="live-replay">
@@ -43,13 +43,13 @@ export default function ResultsPage() {
       <ReplayRun />
 
       <section className="block" aria-label="On testnet">
-        <h2 className="h-sm">ON TESTNET</h2>
+        <h2 className="h-sm">On testnet</h2>
         <p className="hint">The contract and the NEP-366 co-sign flow, run against NEAR testnet.</p>
         <ul className="plain" data-testid="tx-list">{TX.map(([t, h]) => <li key={h}><span>{t}</span><a href={`https://testnet.nearblocks.io/txns/${h}`} target="_blank" rel="noreferrer">{h.slice(0, 8)}...</a></li>)}</ul>
       </section>
 
       <section className="block" aria-label="Not done">
-        <h2 className="h-sm">NOT DONE</h2>
+        <h2 className="h-sm">Not done</h2>
         <ul className="plain" data-testid="not-done">{NOT_DONE.map((n) => <li key={n}><span>{n}</span></li>)}</ul>
       </section>
     </div>

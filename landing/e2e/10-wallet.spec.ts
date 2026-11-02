@@ -47,7 +47,7 @@ test.describe("approve on testnet with your own wallet", () => {
   test("[F66] the real contract's held payments show their source and a lookalike warning", async ({ page }) => {
     await fakeWallet(page, null);
     await open(page);
-    await expect(card(page).getByRole("heading")).toHaveText("SEND 0.4 NEAR TO acrne.testnet");
+    await expect(card(page).getByRole("heading")).toHaveText("Send 0.4 NEAR to acrne.testnet");
     await expect(card(page).locator(".source")).toContainText("email:billing@acrne.testnet");
     await expect(card(page)).toContainText("acrne.testnet vs acme.testnet: 2 characters differ");
     await expect(page.getByTestId("wallet-cosign")).toContainText("taint-e2e.testnet");
@@ -67,7 +67,7 @@ test.describe("approve on testnet with your own wallet", () => {
     await open(page);
     await expect(page.locator(".error").filter({ hasText: "Only" })).toContainText(`Only ${OWNER} can approve`);
     await expect(card(page).getByRole("button", { name: "APPROVE ONCE" })).toBeDisabled();
-    await expect(card(page).getByRole("button", { name: /APPROVE AND REMEMBER/ })).toBeDisabled();
+    await expect(card(page).getByRole("button", { name: /approve and remember/i })).toBeDisabled();
   });
 
   test("[F69] the owner's wallet is asked to sign one cosign call for exactly that proposal", async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe("approve on testnet with your own wallet", () => {
   test("[F70] approve and remember asks the contract to remember", async ({ page }) => {
     await fakeWallet(page, OWNER);
     await open(page);
-    await card(page).getByRole("button", { name: /APPROVE AND REMEMBER/ }).click();
+    await card(page).getByRole("button", { name: /approve and remember/i }).click();
     expect(await calls(page)).toEqual([{ receiverId: "taint-e2e.testnet", method: "cosign", proposal_id: 7, proposal_hash: "hash7", remember: true }]);
   });
 

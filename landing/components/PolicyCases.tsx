@@ -9,8 +9,8 @@ export default function PolicyCases() {
   return (
     <section className="block" aria-label="Shared rule table">
       <div className="block-head">
-        <h2 className="h-sm">SHARED RULE TABLE</h2>
-        <button className="btn ghost small" onClick={reload} disabled={loading}><Icon name="refresh" /> {loading ? "RUNNING" : "RUN AGAIN"}</button>
+        <h2 className="h-sm">Shared rule table</h2>
+        <button className="btn ghost small" onClick={reload} disabled={loading}><Icon name="refresh" /> {loading ? "Running" : "Run again"}</button>
       </div>
       <p className="hint">bench/policy-cases.json. The TypeScript mock runs it here. <code>npm run test:contract</code> runs the same file against the Rust contract.</p>
       {error && <ErrorNote>{error}</ErrorNote>}

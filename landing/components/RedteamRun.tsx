@@ -27,7 +27,7 @@ export default function RedteamRun({ attempts }: { attempts: AttemptView[] }) {
   return (
     <section aria-label="Run the red team">
       <div className="toolbar">
-        <button className="btn primary" onClick={run} disabled={busy}>{busy ? "RUNNING" : rows ? "RUN AGAIN" : "RUN ALL TWELVE"} <Icon name="right" /></button>
+        <button className="btn primary" onClick={run} disabled={busy}>{busy ? "Running" : rows ? "Run again" : "Run all twelve"} <Icon name="right" /></button>
         {summary && (
           <p className="tally" data-testid="redteam-summary">
             <b>{summary.held}</b> held or refused <b>{summary.byDesign}</b> moved by design <b className={summary.failures ? "red" : ""}>{summary.failures}</b> failures

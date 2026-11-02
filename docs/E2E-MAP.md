@@ -9,17 +9,20 @@ Opt-in: `npm --prefix landing run test:e2e:live` (F58 to F61; needs `.env`, spen
 
 | ID | Feature | Code | Spec |
 |---|---|---|---|
-| F01 | Hero, tagline, limits line | `Sections.tsx` Intro | 01-landing |
-| F02 | Section rail: click, arrows, active label, nav highlight | `Shell.tsx` | 01-landing |
-| F03 | Compare shows real fixture text with the attacker's values flagged | `Sections.tsx` Demo, `lib/data.ts` | 01-landing |
-| F04 | Drag handle moves the compare divide | `Sections.tsx` Demo | 01-landing |
-| F05 | Policy desk answers from the real rules | `PolicyDesk.tsx`, `POST /policy/evaluate` | 01-landing |
-| F06 | Benchmark rows equal the saved live run | `Sections.tsx` Benchmark, `lib/data.ts`, `bench/results/` | 01-landing |
-| F07 | Feature tiles and FAQ swap their detail panel | `Sections.tsx` | 01-landing |
-| F08 | All six links into the app, and the nav button | `Sections.tsx` Ecosystem | 01-landing |
-| F09 | Lenis smooth scroll, heading scramble ends on the real words | `Shell.tsx` | 01-landing |
-| F10 | No reference-site or filler text remains | whole page | 01-landing |
+| F01 | Hero says what TAINT is; the limits are stated on the page | `Sections.tsx` Hero, Modes | 01-landing |
+| F02 | Nav scrolls to its sections, opens the app and the repository | `Shell.tsx` Nav | 01-landing |
+| F03 | Product window counts its number up and says it is sample data | `Dashboard.tsx` | 01-landing |
+| F04 | The halftone art is painted, and moves | `Halftone.tsx` | 01-landing |
+| F05 | The rules widget answers from the real rules | `Widget`, `POST /policy/evaluate` | 01-landing |
+| F06 | A source merely named "owner" is still outside | `Widget` | 01-landing |
+| F07 | Results grid shows the saved live results | `Results`, `lib/data.ts`, `bench/results/` | 01-landing |
+| F08 | The footer reaches every page of the app | `Footer` | 01-landing |
+| F09 | Lenis smooth scroll; headings slide into place | `Shell.tsx` | 01-landing |
+| F10 | Nothing from the reference or any made-up claim is left | whole page | 01-landing |
 | F11 | Reduced motion: content at once, no scroll hijack | `Shell.tsx` | 01-landing |
+| F76 | The two modes lead to the demo and the wallet page | `Modes` | 01-landing |
+| F77 | The handle codes beside the widget keep changing | `Scramble` | 01-landing |
+| F78 | FAQ opens one question at a time and says what is not done | `Faq` | 01-landing |
 
 ## Rob the Pet: `/demo`
 

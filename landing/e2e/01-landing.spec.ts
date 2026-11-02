@@ -1,110 +1,154 @@
-import { expect, fixture, listDir, readJson, test } from "./fixtures";
-
-const SECTIONS = ["INTRO", "PROVENANCE", "WORKFLOW", "FEATURES", "POLICY DESK", "LIMITS", "BENCHMARK", "THE APP", "FAQ", "START"];
+import { expect, listDir, readJson, test } from "./fixtures";
 
 test.describe("landing page", () => {
   test.beforeEach(async ({ page }) => page.goto("/"));
 
-  test("[F01] hero says what TAINT is and never hides its limits", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("CHECK WHO");
-    await expect(page.locator(".hero-sub")).toContainText("TAINT checks who decided");
-    await expect(page.locator(".fine").first()).toContainText("TESTNET ONLY");
-    await expect(page.locator(".fine").first()).toContainText("TEE STUBBED");
+  test("[F01] the hero says what TAINT is, and the limits are stated in the page", async ({ page }) => {
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Check who decided");
+    await expect(page.locator(".hero-side")).toContainText("TAINT checks who decided");
+    await expect(page.locator(".hero-side")).toContainText("NEAR testnet");
+    await page.locator("#modes").scrollIntoViewIfNeeded();
+    await expect(page.locator("#modes .fine")).toContainText("Neither mode touches mainnet");
+    await expect(page.locator("#modes .fine")).toContainText("attestation is stubbed");
   });
 
-  test("[F02] the rail lists ten sections, and clicking one scrolls there and marks it", async ({ page }) => {
-    await expect(page.locator(".rail li")).toHaveCount(SECTIONS.length);
-    await page.locator(".rail li button").nth(3).click();
-    await expect(page.locator(".rail li.on .rail-label")).toHaveText("FEATURES", { timeout: 6000 });
-    await expect(page.locator(".nav nav a.on")).toHaveText("FEATURES");
-    await page.getByRole("button", { name: "Next section" }).click();
-    await expect(page.locator(".rail li.on .rail-label")).toHaveText("POLICY DESK", { timeout: 6000 });
-  });
-
-  test("[F03] the compare shows real fixture text and flags the values the attacker wrote", async ({ page }) => {
-    await page.locator("#demo").scrollIntoViewIfNeeded();
-    for (const id of ["F1", "F2", "F3"]) {
-      const f = fixture(id);
-      await page.locator(".seg").getByRole("button", { name: id, exact: true }).click();
-      await expect(page.getByTestId("taint-view")).toContainText(f.attachments[0].source);
-      for (const e of f.model_outputs.extractor) for (const v of [...e.accounts, ...e.tokens, ...e.amounts]) await expect(page.getByTestId("taint-view").locator("mark").filter({ hasText: v }).first()).toBeAttached();
-      await expect(page.getByTestId("scenario-outcome")).toHaveText("HELD");
+  test("[F02] the nav scrolls to its sections and opens the app and the repository", async ({ page }) => {
+    for (const [link, id] of [["How it works", "how"], ["Modes", "modes"], ["Results", "results"], ["FAQ", "faq"]]) {
+      await page.evaluate(() => window.scrollTo(0, 0)); // the nav is part of the page, as in the design, so go back up to it
+      await expect.poll(() => page.evaluate(() => Math.round(scrollY))).toBe(0);
+      await page.getByTestId("nav").getByRole("link", { name: link }).click();
+      let last = -1;
+      await expect(async () => {
+        const y = await page.evaluate(() => Math.round(scrollY));
+        const settled = y === last;
+        last = y;
+        expect(settled && y > 0).toBe(true);
+      }).toPass({ timeout: 9000, intervals: [400] });
+      const top = await page.locator(`#${id}`).evaluate((e) => e.getBoundingClientRect().top);
+      expect(Math.abs(top)).toBeLessThan(260);
     }
-    await page.locator(".seg").getByRole("button", { name: "L1", exact: true }).click();
-    await expect(page.getByTestId("scenario-outcome")).toHaveText("DONE");
-  });
-
-  test("[F04] dragging the handle moves the divide between the two readings", async ({ page }) => {
-    const box = page.getByTestId("compare");
-    await box.scrollIntoViewIfNeeded();
-    const view = page.getByTestId("taint-view");
-    const before = await view.getAttribute("style");
-    const b = (await box.boundingBox())!;
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(b.x + b.width * 0.2, b.y + b.height / 2, { steps: 4 });
-    await page.mouse.up();
-    await expect(view).not.toHaveAttribute("style", before!);
-    expect(await view.getAttribute("style")).toContain("20");
-  });
-
-  test("[F05] the policy desk answers from the real rules", async ({ page }) => {
-    const desk = page.getByTestId("policy-desk");
-    await desk.scrollIntoViewIfNeeded();
-    await expect(page.getByTestId("verdict")).toContainText("HELD");
-    await expect(page.getByTestId("verdict")).toContainText("recipient from x.com/@attacker");
-    await desk.getByRole("tab", { name: "SOURCES" }).click();
-    await desk.getByRole("group", { name: "RECIPIENT CAME FROM" }).getByRole("button", { name: "OWNER" }).click();
-    await desk.getByRole("group", { name: "AMOUNT CAME FROM" }).getByRole("button", { name: "OWNER" }).click();
-    await expect(page.getByTestId("verdict")).toContainText("EXECUTED");
-  });
-
-  test("[F06] the benchmark rows are the saved live results", async ({ page }) => {
-    const file = listDir("bench", "results").filter((f) => f.endsWith("-LIVE.json")).at(-1)!;
-    const { rows, model } = readJson("bench", "results", file);
-    const count = (agent: string, kind: string, outcome: string) => rows.filter((r: any) => r.agent === agent && r.fixture.startsWith(kind) && r.outcome === outcome).length;
-    const total = (agent: string, kind: string) => rows.filter((r: any) => r.agent === agent && r.fixture.startsWith(kind)).length;
-    const list = page.getByTestId("bench-rows");
-    await list.scrollIntoViewIfNeeded();
-    await expect(list.locator("li").nth(0)).toContainText(`DRAINED ${count("naive", "F", "drained")}/${total("naive", "F")}`);
-    await expect(list.locator("li").nth(1)).toContainText(`BLOCKED ${count("allowlist", "F", "blocked")}/${total("allowlist", "F")}`);
-    await expect(list.locator("li").nth(1)).toContainText(`${count("allowlist", "L", "blocked")}/${total("allowlist", "L")}`);
-    await expect(list.locator("li").nth(2)).toContainText(`HELD ${count("taint", "F", "pending")}/${total("taint", "F")}`);
-    await expect(list.locator("li").nth(2)).toContainText(`${count("taint", "L", "ok")}/${total("taint", "L")}`);
-    await expect(page.locator("#benchmark .note")).toContainText(model);
-  });
-
-  test("[F07] feature tiles and FAQ questions swap their detail panel", async ({ page }) => {
-    await page.locator("#features").scrollIntoViewIfNeeded();
-    await page.locator(".grid8").getByRole("button", { name: /24 HOUR CAP/ }).click();
-    await expect(page.locator("#features .detail h3")).toHaveText("24 HOUR CAP");
-    await page.locator("#faq").scrollIntoViewIfNeeded();
-    await page.locator(".qs").getByRole("button", { name: /NOT DONE YET/ }).click();
-    await expect(page.locator("#faq .detail p")).toContainText("Mainnet");
-  });
-
-  test("[F08] every way into the app works", async ({ page }) => {
-    for (const [href, heading] of [["/demo", "ROB THE PET."], ["/cosign", "PENDING CO-SIGNS."], ["/wallet", "THE WALLET."], ["/policy", "THE POLICY."], ["/redteam", "THE RED TEAM."], ["/results", "THE RESULTS."]]) {
-      await page.goto("/");
-      await page.locator("#ecosystem").scrollIntoViewIfNeeded();
-      await page.locator(`.eco a[href="${href}"]`).click();
-      await expect(page).toHaveURL(new RegExp(`${href}$`));
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
-    }
-    await page.goto("/");
-    await page.getByRole("link", { name: "OPEN THE APP" }).click();
+    await expect(page.getByTestId("nav").getByRole("link", { name: "GitHub" })).toHaveAttribute("href", "https://github.com/shane2512/TAINT");
+    await page.getByTestId("nav").getByRole("link", { name: "Try the demo" }).click();
     await expect(page).toHaveURL(/\/demo$/);
   });
 
-  test("[F09] smooth scroll is on, and the section headings finish as their real words", async ({ page }) => {
-    await expect(page.locator("html")).toHaveClass(/lenis/);
-    await page.locator("#workflow").scrollIntoViewIfNeeded();
-    await expect(page.locator("#workflow h2")).toHaveText("FROM PROMPT TO PAYMENT.");
+  test("[F03] the product window in the hero counts its number up and says it is sample data", async ({ page }) => {
+    const hero = page.getByTestId("dash-hero");
+    await expect(hero).toContainText("SAMPLE DATA");
+    await expect(hero.locator(".bignum span")).toHaveText("1.500", { timeout: 9000 });
+    await expect(hero).toContainText("Held for co-sign");
   });
 
-  test("[F10] nothing from the reference site or filler text is left", async ({ page }) => {
+  test("[F04] the halftone art is really painted, and moves", async ({ page }) => {
+    const sum = () => page.locator(".hero-dots").evaluate((c: HTMLCanvasElement) => {
+      const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 4) n += d[i];
+      return n;
+    });
+    await page.waitForTimeout(2800); // it rises in
+    const a = await sum();
+    expect(a).toBeGreaterThan(50_000);
+    await page.waitForTimeout(900);
+    expect(await sum()).not.toBe(a);
+  });
+
+  test("[F05] the rules widget answers from the real rules", async ({ page }) => {
+    const w = page.getByTestId("widget");
+    await w.scrollIntoViewIfNeeded();
+    const go = page.getByTestId("widget-verdict");
+    await expect(go).toHaveAttribute("data-decision", "held");
+    await expect(go).toHaveText("Held for your co-sign");
+    await expect(page.getByTestId("widget-reasons")).toContainText("recipient from x.com/@attacker");
+    await expect(page.getByTestId("widget-reasons")).toContainText("amount from x.com/@attacker");
+    await w.getByRole("group", { name: "Who chose the amount" }).getByRole("button", { name: "Owner" }).click();
+    await expect(page.getByTestId("widget-reasons")).not.toContainText("amount from");
+    await w.getByRole("button", { name: "Flip who chose the recipient" }).click();
+    await expect(go).toHaveAttribute("data-decision", "executed");
+    await expect(go).toHaveText("Executes inside the cap");
+  });
+
+  test("[F06] a source merely named owner is still outside", async ({ page }) => {
+    const w = page.getByTestId("widget");
+    await w.scrollIntoViewIfNeeded();
+    await w.getByLabel("Where the recipient came from").fill("owner");
+    await expect(page.getByTestId("widget-verdict")).toHaveAttribute("data-decision", "held");
+    await expect(page.getByTestId("widget-reasons")).toContainText("recipient from outside (named owner)");
+  });
+
+  test("[F07] the results grid shows the saved live results", async ({ page }) => {
+    const file = listDir("bench", "results").filter((f) => f.endsWith("-LIVE.json")).at(-1)!;
+    const { rows } = readJson("bench", "results", file);
+    const n = (agent: string, kind: string, outcome?: string) => rows.filter((r: any) => r.agent === agent && r.fixture.startsWith(kind) && (!outcome || r.outcome === outcome)).length;
+    const redTotal = listDir("bench", "results").filter((f) => /redteam.*\.md$/.test(f)).length * 60;
+    const grid = page.getByTestId("statgrid");
+    await grid.scrollIntoViewIfNeeded();
+    const cells = grid.locator(".stat");
+    await expect(cells.nth(0).locator(".stat-n")).toHaveText(String(n("taint", "F", "pending")), { timeout: 9000 });
+    await expect(cells.nth(0)).toContainText(`of ${n("taint", "F")}`);
+    await expect(cells.nth(1).locator(".stat-n")).toHaveText("0", { timeout: 9000 });
+    await expect(cells.nth(1)).toContainText(`in ${redTotal} live red-team attempts`);
+    await expect(cells.nth(2).locator(".stat-n")).toHaveText(String(n("taint", "L", "ok")), { timeout: 9000 });
+    await expect(grid).toContainText("One model, one provider, four fixtures the authors chose");
+    await expect(page.locator("#results .fine")).toContainText("saved run files");
+  });
+
+  test("[F08] the footer reaches every page of the app", async ({ page }) => {
+    for (const [href, heading] of [["/demo", "Rob the Pet."], ["/cosign", "Pending co-signs."], ["/wallet", "The wallet."], ["/policy", "The policy."], ["/redteam", "The red team."], ["/results", "The results."]]) {
+      await page.goto("/");
+      const link = page.locator(`#footer a[href="${href}"]`).first();
+      await link.scrollIntoViewIfNeeded();
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${href}$`));
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
+    }
+  });
+
+  test("[F09] smooth scroll is on, and the headings slide into place", async ({ page }) => {
+    await expect(page.locator("html")).toHaveClass(/lenis/);
+    await page.locator("#how").scrollIntoViewIfNeeded();
+    const line = page.locator("#how h2 .ln > span").first();
+    await expect(async () => {
+      const y = await line.evaluate((e) => new DOMMatrix(getComputedStyle(e).transform).m42);
+      expect(Math.abs(y)).toBeLessThan(1);
+    }).toPass({ timeout: 6000 });
+  });
+
+  test("[F10] nothing from the reference or any made-up claim is left", async ({ page }) => {
     const text = await page.locator("body").innerText();
-    for (const gone of [/pub crawl/i, /bar chat/i, /signal desk/i, /house board/i, /textmode/i, /opacity/i, /936/, /glyph ramp/i, /24 hours\b.*pending/i]) expect(text).not.toMatch(gone);
+    for (const gone of [/kraken/i, /suctra/i, /schedule a demo/i, /12,486/, /\$149/, /\$299/, /99\.99%/, /\bunlimited\b/i, /pub crawl/i, /testimonial/i]) expect(text).not.toMatch(gone);
+  });
+
+  test("[F76] the two modes lead to the demo and to the wallet page", async ({ page }) => {
+    await page.locator("#modes").scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("mode-sim")).toContainText("SIMULATED");
+    await expect(page.getByTestId("mode-testnet")).toContainText("5,00");
+    await expect(page.getByTestId("mode-testnet")).toContainText("Your wallet signs, no key on this site");
+    await page.getByTestId("mode-testnet").getByRole("link", { name: /Approve with your wallet/ }).click();
+    await expect(page).toHaveURL(/\/cosign$/);
+    await page.goto("/");
+    await page.getByTestId("mode-sim").scrollIntoViewIfNeeded();
+    await page.getByTestId("mode-sim").getByRole("link", { name: /Try the demo/ }).click();
+    await expect(page).toHaveURL(/\/demo$/);
+  });
+
+  test("[F77] the handle codes beside the widget keep changing", async ({ page }) => {
+    await page.getByTestId("widget").scrollIntoViewIfNeeded();
+    const code = page.locator(".scr.l span").first();
+    const seen = new Set<string>();
+    for (let i = 0; i < 6; i++) { seen.add((await code.textContent()) ?? ""); await page.waitForTimeout(260); }
+    expect(seen.size).toBeGreaterThan(2);
+  });
+
+  test("[F78] the questions open one at a time, and say what is not done", async ({ page }) => {
+    await page.locator("#faq").scrollIntoViewIfNeeded();
+    const q = (name: RegExp) => page.locator(".faq-q").filter({ hasText: name });
+    await expect(q(/What does TAINT stop/)).toHaveAttribute("aria-expanded", "true");
+    await q(/What is not done yet/).click();
+    await expect(q(/What is not done yet/)).toHaveAttribute("aria-expanded", "true");
+    await expect(q(/What does TAINT stop/)).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator(".faq-row.on .faq-a")).toContainText("Mainnet");
+    await expect(page.locator(".faq-row.on .faq-a")).toBeVisible();
   });
 });
 
@@ -113,9 +157,9 @@ test.describe("reduced motion", () => {
 
   test("[F11] content is there at once, with no smooth-scroll hijack", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("#workflow h2")).toHaveText("FROM PROMPT TO PAYMENT.");
-    await expect(page.locator("#workflow h2 span")).toHaveCSS("opacity", "1");
     await expect(page.locator("html")).not.toHaveClass(/lenis-smooth/);
-    await expect(page.locator(".card").first()).toBeVisible();
+    await expect(page.getByTestId("dash-hero").locator(".bignum span")).toHaveText("1.500");
+    await page.locator("#modes").scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("mode-sim")).toBeVisible();
   });
 });

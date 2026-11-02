@@ -121,12 +121,12 @@ export default function WalletCosign() {
         {account ? (
           <>
             <p className="tally" data-testid="wallet-account">Connected as <b>{account}</b></p>
-            <button className="btn ghost small" onClick={() => wallet.current?.disconnect()}>DISCONNECT</button>
+            <button className="btn ghost small" onClick={() => wallet.current?.disconnect()}>Disconnect</button>
           </>
         ) : (
-          <button className="btn primary small" onClick={() => wallet.current?.connect()} data-testid="wallet-connect">CONNECT WALLET <Icon name="ne" size={10} /></button>
+          <button className="btn primary small" onClick={() => wallet.current?.connect()} data-testid="wallet-connect">Connect wallet <Icon name="ne" size={10} /></button>
         )}
-        <button className="btn ghost small" onClick={loadHeld}><Icon name="refresh" /> REFRESH</button>
+        <button className="btn ghost small" onClick={loadHeld}><Icon name="refresh" /> Refresh</button>
       </div>
       {account && !isOwner && <ErrorNote>Only <b>{info.ownerAccount}</b> can approve. You are connected as {account}.</ErrorNote>}
       {back && (back.ok
@@ -140,14 +140,14 @@ export default function WalletCosign() {
           const done = r && r !== "sending" && r.ok;
           return (
             <article className={`hold-card ${done ? "finished" : ""}`} key={p.proposalId} data-testid={`chain-proposal-${p.proposalId}`}>
-              <h2>{p.action.kind === "Transfer" ? `SEND ${p.amountNear} NEAR TO ${p.action.recipient}` : `SWAP ${p.amountNear} NEAR INTO ${p.action.token}`}</h2>
+              <h2>{p.action.kind === "Transfer" ? `Send ${p.amountNear} NEAR to ${p.action.recipient}` : `Swap ${p.amountNear} NEAR into ${p.action.token}`}</h2>
               <dl>
                 <dt>WHERE THE VALUE CAME FROM</dt><dd className="source">{p.sourceLine || "Your own instruction"}</dd>
                 {p.diff && <><dt>LOOKALIKE CHECK</dt><dd className="warn">{p.diff}</dd></>}
               </dl>
               <div className="actions">
-                <button className="btn primary" disabled={!isOwner || r === "sending" || !!done} onClick={() => approve(p, false)}>APPROVE ONCE</button>
-                {p.action.recipient && <button className="btn ghost" disabled={!isOwner || r === "sending" || !!done} onClick={() => approve(p, true)}>APPROVE AND REMEMBER (CAP 1 NEAR, 30 DAYS)</button>}
+                <button className="btn primary" disabled={!isOwner || r === "sending" || !!done} onClick={() => approve(p, false)}>Approve once</button>
+                {p.action.recipient && <button className="btn ghost" disabled={!isOwner || r === "sending" || !!done} onClick={() => approve(p, true)}>Approve and remember (cap 1 NEAR, 30 days)</button>}
               </div>
               {r === "sending" && <p className="hint" role="status">Waiting for your wallet...</p>}
               {r && r !== "sending" && (r.ok

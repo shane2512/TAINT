@@ -5,12 +5,12 @@ import { attempts, liveRedteams } from "../../../lib/data";
 export default function RedteamPage() {
   return (
     <div>
-      <PageHead kicker="TWELVE ATTACKS / A FULLY FOOLED MODEL" title="THE RED TEAM.">
+      <PageHead kicker="TWELVE ATTACKS / A FULLY FOOLED MODEL" title="The red team.">
         This run assumes the model believed every attack and hands it the attacker&apos;s output. It tests the deterministic layers: parsers, handle typing, literal grounding and the contract gate.
       </PageHead>
       <RedteamRun attempts={attempts()} />
       <section className="block" aria-label="Saved live runs">
-        <h2 className="h-sm">SAVED LIVE-MODEL RUNS</h2>
+        <h2 className="h-sm">Saved live-model runs</h2>
         <p className="hint">A real model, not told it was being attacked, with simulated payments. Error rows are API failures and say nothing either way, so neither run is a clean full measurement.</p>
         <div className="table-wrap">
           <table data-testid="live-redteam">

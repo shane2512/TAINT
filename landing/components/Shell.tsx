@@ -1,67 +1,48 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import { Icon } from "./ui";
-
-export const SECTIONS = [
-  { id: "intro", label: "INTRO" },
-  { id: "demo", label: "PROVENANCE" },
-  { id: "workflow", label: "WORKFLOW" },
-  { id: "features", label: "FEATURES" },
-  { id: "interface", label: "POLICY DESK" },
-  { id: "privacy", label: "LIMITS" },
-  { id: "benchmark", label: "BENCHMARK" },
-  { id: "ecosystem", label: "THE APP" },
-  { id: "faq", label: "FAQ" },
-  { id: "install", label: "START" },
-];
-
-const NAV = [
-  { label: "HOW IT WORKS", id: "workflow" },
-  { label: "FEATURES", id: "features" },
-  { label: "LIMITS", id: "privacy" },
-  { label: "BENCHMARK", id: "benchmark" },
-];
-const GLYPHS = "#*+=-%";
+import { Icon, Mark } from "./ui";
 
 let lenisRef: Lenis | null = null;
-const go = (id: string) => {
+export const go = (id: string) => {
   const el = document.getElementById(id);
   if (!el) return;
-  if (lenisRef) lenisRef.scrollTo(el, { offset: -53, duration: 1.4 });
+  if (lenisRef) lenisRef.scrollTo(el, { offset: -20, duration: 1.5 });
   else el.scrollIntoView({ behavior: "smooth" });
 };
 
-function scramble(el: HTMLElement) {
-  const full = el.dataset.text!;
-  const o = { p: 0 };
-  gsap.set(el, { opacity: 1 });
-  gsap.to(o, {
-    p: 1, duration: Math.min(1.1, 0.4 + full.length * 0.03), ease: "power2.out",
-    onUpdate() {
-      const k = Math.floor(o.p * full.length);
-      let s = full.slice(0, k);
-      for (let i = k; i < full.length; i++) s += full[i] === " " ? " " : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-      el.textContent = s;
-    },
-    onComplete() { el.textContent = full; },
-  });
+export const REPO = "https://github.com/shane2512/TAINT";
+
+export function Nav() {
+  const to = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); go(id); };
+  return (
+    <header className="nav" data-testid="nav">
+      <Link className="brand" href="/"><Mark size={26} /><span>TAINT</span></Link>
+      <nav aria-label="Sections">
+        <a href="#how" onClick={to("how")}>How it works</a>
+        <a href="#modes" onClick={to("modes")}>Modes</a>
+        <a href="#results" onClick={to("results")}>Results</a>
+        <a href="#faq" onClick={to("faq")}>FAQ</a>
+      </nav>
+      <div className="nav-cta">
+        <a className="btn ghost" href={REPO} target="_blank" rel="noreferrer"><Icon name="github" size={14} /> GitHub</a>
+        <Link className="btn solid" href="/demo">Try the demo <Icon name="right" size={12} /></Link>
+      </div>
+    </header>
+  );
 }
 
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const [active, setActive] = useState(0);
-  const railRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let lenis: Lenis | null = null;
     let tick: ((t: number) => void) | null = null;
     if (!reduce) {
-      lenis = new Lenis({ lerp: 0.09, smoothWheel: true, wheelMultiplier: 0.9 });
+      lenis = new Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 0.95 });
       lenisRef = lenis;
       lenis.on("scroll", ScrollTrigger.update);
       tick = (t) => lenis!.raf(t * 1000);
@@ -69,56 +50,29 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       gsap.ticker.lagSmoothing(0);
     }
     const ctx = gsap.context(() => {
-      SECTIONS.forEach((s, i) => {
-        ScrollTrigger.create({
-          trigger: `#${s.id}`, start: "top 55%", end: "bottom 55%",
-          onToggle: (self) => self.isActive && setActive(i),
-          onRefresh: (self) => self.isActive && setActive(i),
-        });
-      });
       if (reduce) return;
-      // headline scramble-in
-      gsap.utils.toArray<HTMLElement>("[data-scramble]").forEach((el) => {
-        el.dataset.text = el.textContent || "";
-        gsap.set(el, { opacity: 0 });
-        ScrollTrigger.create({ trigger: el, start: "top 90%", once: true, onEnter: () => scramble(el) });
+      // headlines: each line slides up out of its mask
+      gsap.utils.toArray<HTMLElement>("[data-lines]").forEach((h) => {
+        const lines = h.querySelectorAll(".ln > span");
+        gsap.from(lines, { yPercent: 108, duration: 1.1, ease: "power4.out", stagger: 0.11, scrollTrigger: h.closest("[data-hero]") ? undefined : { trigger: h, start: "top 86%", once: true }, delay: h.closest("[data-hero]") ? 0.25 : 0 });
       });
-      // fade-up groups
-      gsap.utils.toArray<HTMLElement>("[data-fade]").forEach((el) => {
-        gsap.from(el, { y: 28, autoAlpha: 0, duration: 0.95, ease: "power4.out", scrollTrigger: { trigger: el, start: "top 88%", once: true } });
+      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+        const hero = !!el.closest("[data-hero]");
+        gsap.from(el, { y: 28, autoAlpha: 0, duration: 1, ease: "power3.out", delay: hero ? 0.35 + Number(el.dataset.reveal || 0) : Number(el.dataset.reveal || 0), scrollTrigger: hero ? undefined : { trigger: el, start: "top 88%", once: true } });
       });
       gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((g) => {
-        gsap.from(g.children, { y: 36, autoAlpha: 0, duration: 0.95, ease: "power4.out", stagger: 0.075, scrollTrigger: { trigger: g, start: "top 85%", once: true } });
+        gsap.from(g.children, { y: 44, autoAlpha: 0, duration: 1.05, ease: "power3.out", stagger: 0.09, scrollTrigger: { trigger: g, start: "top 84%", once: true } });
       });
-      // frame lines draw in
-      gsap.utils.toArray<HTMLElement>("[data-line]").forEach((el) => {
-        gsap.from(el, { scaleX: 0, transformOrigin: "left", duration: 1.2, ease: "power3.inOut", scrollTrigger: { trigger: el, start: "top 92%", once: true } });
+      gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((el) => {
+        gsap.fromTo(el, { y: Number(el.dataset.parallax) }, { y: -Number(el.dataset.parallax), ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 0.9 } });
       });
-      // hero intro
-      const tl = gsap.timeline({ defaults: { ease: "power4.out" }, delay: 0.1 });
-      tl.from(".nav", { yPercent: -100, duration: 0.8 })
-        .from(".hero-meta", { autoAlpha: 0, duration: 0.8 }, "-=0.4")
-        .from(".hero-cta > *", { y: 30, autoAlpha: 0, duration: 0.9, stagger: 0.1 }, "-=0.3")
-        .from(".rail", { xPercent: 100, duration: 0.9 }, 0.2);
-      // pixel "00" counter
-      document.querySelectorAll<HTMLElement>("[data-count]").forEach((el) => {
-        const to = Number(el.dataset.count);
-        const o = { v: 0 };
-        gsap.to(o, { v: to, duration: 1.4, ease: "power3.out", onUpdate: () => (el.textContent = String(Math.round(o.v)).padStart(2, "0")), scrollTrigger: { trigger: el, start: "top 85%", once: true } });
+      gsap.utils.toArray<HTMLElement>("[data-draw]").forEach((el) => {
+        gsap.from(el, { scaleX: 0, transformOrigin: "left", duration: 1.4, ease: "power3.inOut", scrollTrigger: { trigger: el, start: "top 92%", once: true } });
       });
-      // glitch words
-      const glitch = Array.from(document.querySelectorAll<HTMLElement>(".glitch"));
-      let last = 0;
-      const gt = (time: number) => {
-        if (time - last < 0.11) return;
-        last = time;
-        glitch.forEach((g) => g.querySelectorAll<HTMLElement>("i").forEach((c) => {
-          const r = Math.random();
-          c.style.transform = r < 0.35 ? `translateY(${((Math.random() * 8 - 4) | 0)}px) skewX(${(Math.random() * 26 - 13) | 0}deg)` : "skewX(-8deg)";
-        }));
-      };
-      gsap.ticker.add(gt);
-      return () => gsap.ticker.remove(gt);
+      // the product window rises into place and its glow comes up behind it
+      gsap.from(".hero-dash", { y: 90, autoAlpha: 0, duration: 1.5, ease: "power4.out", delay: 0.55 });
+      gsap.from(".hero-glow", { autoAlpha: 0, duration: 2.2, ease: "power2.out" });
+      gsap.from(".nav", { yPercent: -100, autoAlpha: 0, duration: 0.9, ease: "power4.out" });
     });
     const onLoad = () => ScrollTrigger.refresh();
     window.addEventListener("load", onLoad);
@@ -130,41 +84,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       lenisRef = null;
     };
   }, []);
-
-  const cur = SECTIONS[active].id;
-  const navOn = (id: string) => NAV.find((n) => n.id === cur)?.id === id;
-
   return (
     <>
-      <header className="nav">
-        <a className="brand" href="#intro" onClick={(e) => { e.preventDefault(); go("intro"); }}>
-          <Icon name="logo" size={14} /> taint.testnet <span className="ver">V0.1.0</span>
-        </a>
-        <nav>
-          {NAV.map((n) => (
-            <a key={n.id} href={`#${n.id}`} className={navOn(n.id) ? "on" : ""} onClick={(e) => { e.preventDefault(); go(n.id); }}>{n.label}</a>
-          ))}
-          <a href="#faq" onClick={(e) => { e.preventDefault(); go("faq"); }}>FAQ</a>
-          <Link className="install" href="/demo">OPEN THE APP <Icon name="ne" size={10} /></Link>
-        </nav>
-      </header>
-
-      <aside className="rail" ref={railRef} aria-label="Sections">
-        <button className="rail-arrow" aria-label="Previous section" onClick={() => go(SECTIONS[Math.max(0, active - 1)].id)}><Icon name="up" /></button>
-        <ol>
-          {SECTIONS.map((s, i) => (
-            <li key={s.id} className={i === active ? "on" : ""}>
-              <span className="rail-label">{s.label}</span>
-              <button onClick={() => go(s.id)}>{String(i + 1).padStart(2, "0")}</button>
-            </li>
-          ))}
-        </ol>
-        <button className="rail-arrow" aria-label="Next section" onClick={() => go(SECTIONS[Math.min(SECTIONS.length - 1, active + 1)].id)}><Icon name="down" /></button>
-      </aside>
-
-      <main>{children}</main>
+      <Nav />
+      <main className="landing">{children}</main>
     </>
   );
 }
-
-export { go };

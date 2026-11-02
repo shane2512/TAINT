@@ -28,8 +28,8 @@ test("[F58] testnet: a real held proposal is approved from the page, through the
 test("[F59] testnet: the wallet reads from the chain and offers no writes", async ({ page }) => {
   await page.goto("/wallet");
   await expect(page.getByTestId("readonly")).toContainText("testnet");
-  await expect(page.getByRole("button", { name: "REMEMBER" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "PIN", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Remember" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Pin", exact: true })).toHaveCount(0);
 });
 
 test("[F60] testnet: the simulated demo and mock suites are off", async ({ page, request }) => {

@@ -1,7 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { GlyphCanvas } from "./Canvases";
-import { RAMPS, type Clock } from "./ascii";
+import { useEffect, useState } from "react";
+import { Halftone } from "./Halftone";
 import { api, Outcome } from "./ui";
 
 const TABS = ["ACTION", "SOURCES", "WALLET", "RULES"];
@@ -30,7 +29,6 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
 interface Verdict { decision: string; reasons: string[] }
 
 export default function PolicyDesk({ caseCount }: { caseCount: number }) {
-  const clock = useRef<Clock>({ t: 0, paused: false }).current;
   const [tab, setTab] = useState("ACTION");
   const [kind, setKind] = useState("TRANSFER");
   const [target, setTarget] = useState("attacker.testnet");
@@ -70,8 +68,6 @@ export default function PolicyDesk({ caseCount }: { caseCount: number }) {
     return () => { live = false; clearTimeout(t); };
   }, [kind, target, amount, recipientFrom, amountFrom, label, remembered, pinned, spent]);
 
-  // The field turns red as far as the proposal is untrusted.
-  const redAt = verdict?.decision === "held" ? -0.2 : verdict?.decision === "executed" ? 2 : 0.74;
 
   return (
     <div className="desk" data-testid="policy-desk" data-fade>
@@ -81,7 +77,7 @@ export default function PolicyDesk({ caseCount }: { caseCount: number }) {
       </div>
       <div className="deskbody">
         <div className="deskview">
-          <GlyphCanvas clock={clock} className="cv" opts={{ cell: 8, ramp: RAMPS.classic, redAt }} />
+          <Halftone scene="waves" cell={9} seed={7} className="cv" wave={0.18} />
           <div className="verdict" aria-live="polite" data-testid="verdict">
             {err ? <p className="verdict-err">{err}</p> : verdict && (
               <>

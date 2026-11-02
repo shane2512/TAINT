@@ -18,7 +18,7 @@ test.describe("every app page", () => {
     await page.goto("/wallet");
     await page.locator(".nav .brand").click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator("#intro")).toBeVisible();
+    await expect(page.locator("#top")).toBeVisible();
   });
 
   test("[F51] the keyboard can reach the controls, with a visible focus ring", async ({ page }) => {
@@ -48,10 +48,11 @@ test.describe("no runtime behind the site", () => {
 
   test("[F54] the landing page still reads, and the desk explains itself", async ({ page }) => {
     await page.goto(OFF + "/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("CHECK WHO");
-    await expect(page.getByTestId("bench-rows")).toContainText("DRAINED");
-    await page.getByTestId("policy-desk").scrollIntoViewIfNeeded();
-    await expect(page.getByTestId("verdict")).toContainText("not running");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Check who decided");
+    await expect(page.getByTestId("statgrid")).toBeAttached();
+    await page.getByTestId("widget").scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("widget-verdict")).toContainText("Runtime offline");
+    await expect(page.getByTestId("widget-reasons")).toContainText("not running");
   });
 });
 

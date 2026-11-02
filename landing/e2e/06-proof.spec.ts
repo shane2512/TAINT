@@ -67,6 +67,6 @@ test.describe("results", () => {
     await expect(links).toHaveCount(4);
     await expect(links.first()).toHaveAttribute("href", /^https:\/\/testnet\.nearblocks\.io\/txns\//);
     const notDone = page.getByTestId("not-done");
-    for (const t of ["Mainnet", "Wallet signing", "TEE attestation", "full-access key"]) await expect(notDone).toContainText(t);
+    for (const t of ["Mainnet", "real wallet signature", "TEE attestation", "full-access key"]) await expect(notDone).toContainText(t);
   });
 });

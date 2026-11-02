@@ -34,7 +34,7 @@ export default function WalletPage() {
   const pct = w?.globalCapNear ? Math.min(100, (Number(w.spent24hNear) / Number(w.globalCapNear)) * 100) : 0;
   return (
     <div>
-      <PageHead kicker="WHAT THE CONTRACT WILL PAY WITHOUT ASKING" title="THE WALLET.">
+      <PageHead kicker="WHAT THE CONTRACT WILL PAY WITHOUT ASKING" title="The wallet.">
         A recipient in the address book or registered by a pinned account can be paid inside its cap. Everything else waits for a co-sign.
       </PageHead>
       {loadError && <ErrorNote>{loadError}</ErrorNote>}
@@ -50,12 +50,12 @@ export default function WalletPage() {
 
           <div className="cols">
             <section aria-label="Address book" className="block">
-              <h2 className="h-sm">ADDRESS BOOK</h2>
+              <h2 className="h-sm">Address book</h2>
               {w.writable && (
                 <form className="inline" onSubmit={async (e) => { e.preventDefault(); if (await write("remember", { address, capNear: cap || undefined })) { setAddress(""); setCap(""); } }}>
                   <label><span className="gl">ACCOUNT</span><input className="txt" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="vendor.testnet" spellCheck={false} /></label>
                   <label><span className="gl">CAP (NEAR)</span><input className="txt" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="1" inputMode="decimal" /></label>
-                  <button className="btn primary small" disabled={!address.trim()}>REMEMBER</button>
+                  <button className="btn primary small" disabled={!address.trim()}>Remember</button>
                 </form>
               )}
               {w.book.length ? (
@@ -65,7 +65,7 @@ export default function WalletPage() {
                     <tbody>{w.book.map((e) => (
                       <tr key={e.address}>
                         <td>{e.address}</td><td className="num">{e.capNear} NEAR</td><td className="num">{new Date(e.expiresAt).toISOString().slice(0, 10)}</td><td>{e.learnedFrom}</td>
-                        {w.writable && <td className="r"><button className="link" onClick={() => write("forget", { address: e.address })} aria-label={`Forget ${e.address}`}>FORGET</button></td>}
+                        {w.writable && <td className="r"><button className="link" onClick={() => write("forget", { address: e.address })} aria-label={`Forget ${e.address}`}>Forget</button></td>}
                       </tr>
                     ))}</tbody>
                   </table>
@@ -74,25 +74,25 @@ export default function WalletPage() {
             </section>
 
             <section aria-label="Pinned accounts" className="block">
-              <h2 className="h-sm">PINNED ACCOUNTS</h2>
+              <h2 className="h-sm">Pinned accounts</h2>
               {w.writable && (
                 <form className="inline" onSubmit={async (e) => { e.preventDefault(); if (await write("pin", { address: pin })) setPin(""); }}>
                   <label><span className="gl">ACCOUNT</span><input className="txt" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="acme.testnet" spellCheck={false} /></label>
-                  <button className="btn primary small" disabled={!pin.trim()}>PIN</button>
+                  <button className="btn primary small" disabled={!pin.trim()}>Pin</button>
                 </form>
               )}
               {w.pins.length ? (
-                <ul className="plain" data-testid="pins">{w.pins.map((p) => <li key={p}><span>{p}</span>{w.writable && <button className="link" onClick={() => write("unpin", { address: p })} aria-label={`Unpin ${p}`}>UNPIN</button>}</li>)}</ul>
+                <ul className="plain" data-testid="pins">{w.pins.map((p) => <li key={p}><span>{p}</span>{w.writable && <button className="link" onClick={() => write("unpin", { address: p })} aria-label={`Unpin ${p}`}>Unpin</button>}</li>)}</ul>
               ) : <p className="empty" data-testid="pins-empty">No pinned accounts. A pinned account can register payee addresses, capped at 0.5 NEAR for their first 24 hours.</p>}
             </section>
           </div>
 
           <section className="block" aria-label="Owner calls">
-            <h2 className="h-sm">ONLY ON THE RUST CONTRACT</h2>
+            <h2 className="h-sm">Only on the Rust contract</h2>
             <p className="hint">These owner calls exist on the deployed contract and are not on this page, so there are no buttons for them here.</p>
             <ul className="plain">{OWNER_CALLS.map(([c, d]) => <li key={c}><code>{c}</code><span>{d}</span></li>)}</ul>
           </section>
-          <button className="btn ghost small" onClick={reload}>REFRESH</button>
+          <button className="btn ghost small" onClick={reload}>Refresh</button>
         </>
       )}
     </div>

@@ -21,7 +21,7 @@ test.describe("wallet", () => {
 
   test("[F30] pin and unpin an account", async ({ page }) => {
     await pins(page).getByLabel("ACCOUNT").fill("pinned-e2e.testnet");
-    await pins(page).getByRole("button", { name: "PIN", exact: true }).click();
+    await pins(page).getByRole("button", { name: "Pin", exact: true }).click();
     await expect(page.getByTestId("pins")).toContainText("pinned-e2e.testnet");
     await page.getByRole("button", { name: "Unpin pinned-e2e.testnet" }).click();
     await expect(page.getByText("pinned-e2e.testnet")).toHaveCount(0);

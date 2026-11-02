@@ -5,7 +5,7 @@ test.describe("co-sign", () => {
     await rob(page, "F1");
     await page.goto("/cosign");
     const card = await newestProposal(page);
-    await expect(card.getByRole("heading")).toHaveText("SEND 1.5 NEAR TO attacker.testnet");
+    await expect(card.getByRole("heading")).toHaveText("Send 1.5 NEAR to attacker.testnet");
     await expect(card.locator(".source")).toContainText("recipient <- x.com/@attacker");
     await expect(card).toContainText("no price feed configured");
     await expect(card).toContainText("no indexer configured");
@@ -45,8 +45,8 @@ test.describe("co-sign", () => {
     await rob(page, "F3");
     await page.goto("/cosign");
     const card = page.locator('[data-testid^="proposal-"]').filter({ hasText: "newtoken.testnet" }).last();
-    await expect(card.getByRole("heading")).toContainText("SWAP");
-    await expect(card.getByRole("button", { name: /REMEMBER/ })).toHaveCount(0);
+    await expect(card.getByRole("heading")).toContainText("Swap");
+    await expect(card.getByRole("button", { name: /remember/i })).toHaveCount(0);
   });
 
   test("[F25] a second approval of the same proposal is refused", async ({ page, context }) => {
@@ -80,7 +80,7 @@ test.describe("co-sign", () => {
     await rob(page, "F1");
     await page.goto("/cosign");
     const card = await newestProposal(page);
-    await card.getByRole("button", { name: /APPROVE AND REMEMBER/ }).click();
+    await card.getByRole("button", { name: /approve and remember/i }).click();
     await expect(card.getByTestId("approved")).toContainText("remembered");
 
     await page.goto("/wallet");

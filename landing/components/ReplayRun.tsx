@@ -26,8 +26,8 @@ export default function ReplayRun() {
   return (
     <section className="block" aria-label="Mock replay">
       <div className="block-head">
-        <h2 className="h-sm">MOCK REPLAY</h2>
-        <button className="btn ghost small" onClick={run} disabled={busy}>{busy ? "RUNNING" : "RUN IT NOW"} <Icon name="right" /></button>
+        <h2 className="h-sm">Mock replay</h2>
+        <button className="btn ghost small" onClick={run} disabled={busy}>{busy ? "Running" : "Run it now"} <Icon name="right" /></button>
       </div>
       <p className="hint">Hand-authored model answers on all five fixtures. It checks the code against its declared expectations. It says nothing about how a real model behaves.</p>
       {error && <ErrorNote>{error}</ErrorNote>}
