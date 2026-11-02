@@ -12,7 +12,7 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 |---|---|
 | Quarantined runtime: typed handles, extractor, handle-only planner, proposal builder | Built, unit-tested |
 | Policy rules (PRD section 7) | Built as a **TypeScript stand-in** (`runtime/src/mock-contract.ts`) |
-| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 70 unit tests, plus the shared 24-case rule table, which the TypeScript stand-in also passes. **The deployed testnet contract is the earlier version**: it lacks the hardening below until it is upgraded (see bench/RESULTS.md)|
+| `taint.near` Rust contract (`contract/taint`) | **Built, unit-tested, reviewed, and deployed to testnet** (see bench/RESULTS.md). 70 unit tests, plus the shared 24-case rule table, which the TypeScript stand-in also passes. **The deployed testnet contract is the earlier version**: it lacks the hardening described in bench/RESULTS.md until it is upgraded|
 | `mockdex` testnet DEX stand-in (`contract/mockdex`) | Built and unit-tested, not deployed. NEAR Intents has no testnet |
 | TEE (Shade Agent) attestation | **Not done; decided to stub** ([decision record](docs/decisions/0001-attestation.md)). The spike was not run. Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the API against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` uses the MOCK approval. Mainnet not run |
