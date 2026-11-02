@@ -397,11 +397,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const port = Number(process.env.PORT ?? 3000);
   const publicDemo = process.env.PUBLIC_DEMO === "1";
   const host = process.env.HOST ?? "127.0.0.1";
-  const chainView = process.env.CHAIN_VIEW_CONTRACT
+  // The public demo reads this project's own testnet contract by default (read-only, no key); the variables override it.
+  const viewContract = process.env.CHAIN_VIEW_CONTRACT ?? (publicDemo ? "taint-myname.testnet" : undefined);
+  const viewOwner = process.env.CHAIN_VIEW_OWNER ?? (publicDemo ? "owner-myname.testnet" : "");
+  const chainView = viewContract
     ? (() => {
         const network = (process.env.NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
-        const client = new NearViewClient({ network, contractId: process.env.CHAIN_VIEW_CONTRACT!, rpcUrl: process.env.NEAR_RPC_URL });
-        return { network, contractId: process.env.CHAIN_VIEW_CONTRACT!, ownerAccount: process.env.CHAIN_VIEW_OWNER ?? "", getPending: () => client.getPending(), getBook: () => client.getBook() };
+        const client = new NearViewClient({ network, contractId: viewContract, rpcUrl: process.env.NEAR_RPC_URL });
+        return { network, contractId: viewContract, ownerAccount: viewOwner, getPending: () => client.getPending(), getBook: () => client.getBook() };
       })()
     : undefined;
   createAppServer({ liveModel, publicDemo, chainView, trustProxy: process.env.TRUST_PROXY === "1", proxyKey: process.env.PROXY_KEY }).listen(port, host, () => {
