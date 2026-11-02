@@ -78,6 +78,9 @@ function json(res: http.ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+/** A page on another site can POST text/plain to localhost without a preflight; only application/json forces one. */
+const isJson = (req: http.IncomingMessage): boolean => /^application\/json\b/i.test(req.headers["content-type"] ?? "");
+
 function readBody(req: http.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -122,6 +125,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     while (visitors.size > maxSessions) visitors.delete(visitors.keys().next().value!);
     return v;
   }
+  // Past this many addresses, forget the ones that have been quiet for a window.
+  const MAX_TRACKED = 5000;
   const clientId = (req: http.IncomingMessage): string => {
     const fwd = req.headers["x-client-ip"];
     const trusted = o.trustProxy && (!o.proxyKey || req.headers["x-proxy-key"] === o.proxyKey);
@@ -130,6 +135,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
 
   const allowed = (ip: string): boolean => {
     const t = now();
+    if (hits.size > MAX_TRACKED) for (const [k, v] of hits) if (!v.some((x) => t - x < RATE_WINDOW_MS)) hits.delete(k);
     const recent = (hits.get(ip) ?? []).filter((x) => t - x < RATE_WINDOW_MS);
     if (recent.length >= RATE_LIMIT) {
       hits.set(ip, recent);
@@ -250,7 +256,7 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     const c = new MockContract(defaultMockConfig(now));
     if (b.spentNear) {
       const spent = parseAmountYocto(`${b.spentNear} NEAR`);
-      if (!spent) return bad("spentNear must be a NEAR amount");
+      if (!spent || BigInt(spent) > mockCfg.globalCap24h) return bad(`spentNear must be a NEAR amount up to the ${formatNear(mockCfg.globalCap24h.toString())} NEAR daily cap`);
       const owner: Provenance = { class: "Owner", source: "owner" };
       c.propose({ kind: "Transfer", recipient: "spent.testnet", token: null, amount: spent }, { recipient: owner, token: null, amount: owner }, "spent");
     }
@@ -312,6 +318,12 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
+      // Behind a proxy that holds the key, nobody else gets in: no spoofed addresses, no flooding the visitor table.
+      // The host's health check may still read /meta.
+      if (o.proxyKey && req.headers["x-proxy-key"] !== o.proxyKey && !(req.method === "GET" && url.pathname === "/meta")) {
+        return json(res, 403, { error: "forbidden" });
+      }
+      if (req.method === "POST" && !isJson(req)) return json(res, 415, { error: "send application/json" });
       if (req.method === "POST" && url.pathname === "/attack") return o.chain ? json(res, 404, { error: "not found" }) : await attack(req, res);
       if (req.method === "POST" && url.pathname === "/cosign") return await cosign(req, res);
       if (req.method === "POST" && url.pathname === "/policy/evaluate") return await policyEvaluate(req, res);

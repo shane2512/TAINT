@@ -79,6 +79,13 @@ test.describe("policy", () => {
     expect(fired).toBe(false);
   });
 
+  test("[F65] an outside source that is merely named owner is still outside", async ({ page }) => {
+    await tab(page, "SOURCES");
+    await desk(page).getByLabel("OUTSIDE SOURCE").fill("owner");
+    await expect(verdict(page)).toContainText("HELD");
+    await expect(verdict(page)).toContainText("recipient from outside (named owner)");
+  });
+
   test("[F41] an invalid recipient gets an explanation, not a verdict", async ({ page }) => {
     await desk(page).getByLabel("RECIPIENT").fill("NOT VALID!");
     await expect(verdict(page)).toContainText("recipient must be a NEAR account");

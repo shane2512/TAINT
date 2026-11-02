@@ -43,8 +43,16 @@ describe("POST /attack", () => {
   });
 
   it("rejects a body that is not JSON", async () => {
-    const res = await fetch(base + "/attack", { method: "POST", body: "not json" });
+    const res = await fetch(base + "/attack", { method: "POST", headers: { "content-type": "application/json" }, body: "not json" });
     expect(res.status).toBe(400);
+  });
+
+  it("refuses a POST that is not declared as JSON, which a web page on another site could send without a preflight", async () => {
+    for (const type of ["text/plain", "application/x-www-form-urlencoded"]) {
+      const res = await fetch(base + "/cosign", { method: "POST", headers: { "content-type": type }, body: JSON.stringify({ proposalId: 1, proposalHash: "x" }) });
+      expect(res.status).toBe(415);
+    }
+    expect((await fetch(base + "/cosign", { method: "POST", body: "{}" })).status).toBe(415);
   });
 
   it("rate-limits an address to 10 attacks a minute and recovers after the window", async () => {

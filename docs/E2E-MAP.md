@@ -74,6 +74,7 @@ Opt-in: `npm --prefix landing run test:e2e:live` (F58 to F61; needs `.env`, spen
 | F38 | Already-spent counts against 5 NEAR | same | same | `server-api.test` | 05-policy |
 | F39 | Outside swap token always held | same | same | `server-api.test` | 05-policy |
 | F40 | Attacker text shown as text, not run | same | React escaping | | 05-policy |
+| F65 | An outside source merely named "owner" is still outside | `PolicyDesk.tsx` | | 05-policy |
 | F41 | Invalid recipient explained | same (400) | `handles.ts` | `server-api.test` | 05-policy |
 | F42 | The desk changes nothing in the wallet | same | fresh contract per call | `server-api.test` | 05-policy |
 

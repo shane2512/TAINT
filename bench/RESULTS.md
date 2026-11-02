@@ -110,6 +110,28 @@ Findings while building it, fixed:
 - **The old co-sign page called a capped refusal "Approved".** The mock contract answers a global-cap refusal with status 200 and `{Rejected}`; the page now shows it as refused (test F28).
 - **Baselines called the model twice per attack** on the server, so a live model could give them different decisions. They now share one, as the replay does.
 
+## 2026-11-02 Code review and contract hardening
+
+A fresh read of `cosign`, `relayer`, the live replay and red team, the chain-mode server, per-visitor sessions and the public-demo mode found these, each fixed with a failing test first:
+- **A refused co-sign was shown as approved on a real chain.** The contract answers `{Rejected}` (for example over the daily cap) as an ordinary return value, so the transaction and every receipt succeed. The relayer now reads the contract's answer (`failureOf`). The same bug had been fixed for the mock earlier.
+- **A web page on another site could POST to the local co-sign server** without a preflight, because it did not check the content type. Non-JSON POSTs now get 415. (It also needed the proposal hash, which it could not guess.)
+- **The hosted API could be called directly**, so anyone could spoof the address the rate limit counts, or flood the visitor table to wipe other visitors' wallets. With a proxy key set, only the site's proxy gets in; a host's health check may still read `/meta`.
+- `/policy/evaluate` silently ignored an already-spent amount above the cap and answered as if nothing was spent. It now refuses it.
+- The rate-limit table never forgot an address. It now drops quiet ones past 5,000.
+- A policy-desk source merely named "owner" was treated as the owner's. It is now shown as outside.
+
+Contract hardening (Rust, with the TypeScript mock kept identical; shared table now 24 cases; Rust 70 unit tests, all passing):
+- **Payment-failure callback.** A payment that fails (a recipient account that does not exist) leaves the money in the contract; its share of the daily cap and the recipient's cap is returned.
+- **Storage-reserve-aware balance check.** A payment can no longer dip into the NEAR that backs the contract's storage.
+- **Cumulative address-book caps.** An entry's cap now covers the whole 24 hours, not each payment, so an approved counterparty cannot be paid repeatedly under the cap. Only payments the cap itself allowed count: the owner's co-signs and owner-chosen recipients do not.
+- **Unpinning forgets the payees the account vouched for**, so pinning it again starts from nothing.
+- **At most 1,000 payments in the rolling window**, so a leaked worker key cannot make every call too costly to run.
+- **Upgrade path.** `upgrade` (owner only) deploys new code and calls `migrate`, which carries the old state over. This matters once the contract account's own key is deleted: the owner, who can already withdraw everything, can still change the rules; no one else can.
+
+**Not deployed.** The testnet contract is still the earlier version. Its state layout changed (a new `paid` field), so upgrading it means deploying this code and calling `migrate`.
+
+Still open: the set of used flow hashes only grows, so a leaked worker key can slowly lock the contract's balance in storage. It is bounded by the gas the attacker pays, not by the contract.
+
 ## Not done (needs credentials or tooling)
 
 

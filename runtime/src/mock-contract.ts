@@ -44,6 +44,8 @@ export class MockContract {
   private seenFlows = new Set<string>();
   private records = new Map<number, Record_>();
   private spent: { ts: number; amt: bigint }[] = [];
+  /** What each address-book or payee cap has already paid out in the window. Only payments the cap itself allowed count. */
+  private paid = new Map<string, { ts: number; amt: bigint }[]>();
   private nextId = 1;
 
   constructor(private cfg: MockConfig) {}
@@ -65,8 +67,13 @@ export class MockContract {
     this.pins.add(account);
   }
 
+  /** Unpinning forgets every payee the account vouched for, so pinning it again starts from nothing. */
   unpin(account: string): void {
     this.pins.delete(account);
+    for (const [address, by] of this.payees) {
+      by.delete(account);
+      if (!by.size) this.payees.delete(address);
+    }
   }
 
   registerPayee(by: string, address: string): void {
@@ -123,6 +130,14 @@ export class MockContract {
     return best;
   }
 
+  private paid24h(address: string): bigint {
+    const now = this.cfg.now();
+    const live = (this.paid.get(address) ?? []).filter((p) => now - p.ts < DAY);
+    if (live.length) this.paid.set(address, live);
+    else this.paid.delete(address);
+    return live.reduce((a, p) => a + p.amt, 0n);
+  }
+
   private coverage(address: string): bigint | undefined {
     const a = this.bookCap(address);
     const b = this.payeeCap(address);
@@ -145,6 +160,7 @@ export class MockContract {
     if (action.kind === "Transfer" && prov.recipient?.class === "Untrusted") {
       cap = this.coverage(action.recipient!);
       if (cap === undefined) reasons.push(`recipient from ${prov.recipient.source}`);
+      else cap = cap > this.paid24h(action.recipient!) ? cap - this.paid24h(action.recipient!) : 0n; // what is left of it
     }
     if (action.kind === "Swap" && prov.token?.class === "Untrusted") reasons.push(`token from ${prov.token.source}`);
     const amount = BigInt(action.amount);
@@ -160,9 +176,10 @@ export class MockContract {
     return bs58.encode(createHash("sha256").update(JSON.stringify({ action, prov, flowHash })).digest());
   }
 
-  private execute(id: number, amount: bigint): ProposalOutcome {
+  private execute(id: number, amount: bigint, countTo?: string): ProposalOutcome {
     if (this.spent24h() + amount > this.cfg.globalCap24h) return { Rejected: { reason: "global cap exceeded" } };
     this.spent.push({ ts: this.cfg.now(), amt: amount });
+    if (countTo) this.paid.set(countTo, [...(this.paid.get(countTo) ?? []), { ts: this.cfg.now(), amt: amount }]);
     return { Executed: { proposal_id: id } };
   }
 
@@ -173,7 +190,8 @@ export class MockContract {
     if (d !== "execute" && "reject" in d) return { Rejected: { reason: d.reject } };
     const id = this.nextId++;
     if (d === "execute") {
-      const out = this.execute(id, BigInt(action.amount));
+      // only a payment that an outside-named recipient's cap allowed uses that cap up
+      const out = this.execute(id, BigInt(action.amount), action.kind === "Transfer" && prov.recipient?.class === "Untrusted" ? action.recipient! : undefined);
       if ("Executed" in out) this.records.set(id, { proposalId: id, proposalHash: "", action, prov, flowHash, createdAt: this.cfg.now(), status: "Executed" });
       return out;
     }

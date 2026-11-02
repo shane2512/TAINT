@@ -77,6 +77,13 @@ describe("POST /policy/evaluate", () => {
     expect((await post("/policy/evaluate", { ...transfer, recipient: "NOT VALID" })).status).toBe(400);
   });
 
+  it("refuses an already-spent amount above the cap instead of quietly ignoring it", async () => {
+    const r = await post("/policy/evaluate", { ...transfer, spentNear: "100" });
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toMatch(/spentNear/);
+    expect((await post("/policy/evaluate", { ...transfer, spentNear: "5" })).status).toBe(200);
+  });
+
   it("does not leak state between calls", async () => {
     expect((await evaluate({ ...transfer, amountNear: "5" })).decision).toBe("executed");
     expect((await evaluate({ ...transfer, amountNear: "5" })).decision).toBe("executed");

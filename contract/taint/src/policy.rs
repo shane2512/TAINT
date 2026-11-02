@@ -14,6 +14,8 @@ pub trait PolicyView {
     fn book_cap(&self, address: &AccountId, now: u64) -> Option<u128>;
     /// Cap of a payee vouched for by a pinned account (the larger over all pinned registrants).
     fn payee_cap(&self, address: &AccountId, now: u64) -> Option<u128>;
+    /// What those caps have already paid this address in the last 24 hours.
+    fn paid_24h(&self, address: &AccountId, now: u64) -> u128;
 }
 
 /// The PRD section 7 table. Must stay identical to `MockContract.evaluate` in the TypeScript runtime;
@@ -45,6 +47,8 @@ pub fn evaluate(view: &impl PolicyView, action: &ProposedAction, prov: &ArgProve
                 if cap.is_none() {
                     reasons.push(format!("recipient from {}", p.source));
                 }
+                // the cap is for the whole day, so what it already paid comes off it
+                cap = cap.map(|c| c.saturating_sub(view.paid_24h(recipient, now)));
             }
         }
     }
@@ -85,6 +89,7 @@ mod tests {
     struct FakeView {
         book: HashMap<AccountId, u128>,
         payee: HashMap<AccountId, u128>,
+        paid: HashMap<AccountId, u128>,
     }
     impl PolicyView for FakeView {
         fn book_cap(&self, a: &AccountId, _now: u64) -> Option<u128> {
@@ -92,6 +97,9 @@ mod tests {
         }
         fn payee_cap(&self, a: &AccountId, _now: u64) -> Option<u128> {
             self.payee.get(a).copied()
+        }
+        fn paid_24h(&self, a: &AccountId, _now: u64) -> u128 {
+            self.paid.get(a).copied().unwrap_or(0)
         }
     }
 
@@ -149,6 +157,25 @@ mod tests {
         v.book.insert(acct("alice.near"), NEAR);
         let d = evaluate(&v, &transfer("alice.near", 2 * NEAR), &tprov(untrusted("web"), owner()), 0);
         assert_eq!(d, Decision::Pending(vec!["amount above entry cap".into()]));
+    }
+
+    #[test]
+    fn what_the_cap_already_paid_comes_off_it() {
+        let mut v = FakeView::default();
+        v.book.insert(acct("alice.near"), NEAR);
+        v.paid.insert(acct("alice.near"), NEAR * 6 / 10);
+        let p = tprov(untrusted("web"), owner());
+        assert_eq!(evaluate(&v, &transfer("alice.near", NEAR * 4 / 10), &p, 0), Decision::Execute);
+        assert_eq!(evaluate(&v, &transfer("alice.near", NEAR * 5 / 10), &p, 0), Decision::Pending(vec!["amount above entry cap".into()]));
+    }
+
+    #[test]
+    fn a_cap_that_is_fully_used_holds_any_amount() {
+        let mut v = FakeView::default();
+        v.book.insert(acct("alice.near"), NEAR);
+        v.paid.insert(acct("alice.near"), 2 * NEAR);
+        let d = evaluate(&v, &transfer("alice.near", 1), &tprov(untrusted("web"), untrusted("x")), 0);
+        assert_eq!(d, Decision::Pending(vec!["amount from x".into()]));
     }
 
     #[test]

@@ -13,7 +13,7 @@ use near_sdk::store::LookupSet;
 use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise};
 use policy::{evaluate, Decision, PolicyView};
 use std::collections::{BTreeMap, BTreeSet};
-use types::{ActionKind, ArgProvenance, ProposalOutcome, ProposedAction};
+use types::{ActionKind, ArgProvenance, ProposalOutcome, ProposedAction, TrustClass};
 
 const MS: u64 = 1_000_000;
 const DAY_NS: u64 = 24 * 60 * 60 * 1000 * MS;
@@ -27,6 +27,12 @@ const MAX_FLOW_HASH_LEN: usize = 64;
 const MAX_SOURCE_LEN: usize = 128;
 const MAX_PENDING: usize = 100;
 const BUY_GAS: Gas = Gas::from_tgas(30);
+/// Enough for `on_payment`, which only edits two small lists.
+const CALLBACK_GAS: Gas = Gas::from_tgas(10);
+const MIGRATE_GAS: Gas = Gas::from_tgas(100);
+/// Payments kept in the rolling window. Every call walks this list, so a leaked worker key cannot make it so long
+/// that the owner's own co-sign runs out of gas, or lock the balance in storage with a flood of 1-yocto payments.
+const MAX_SPENT: usize = 1000;
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
@@ -72,6 +78,26 @@ pub struct Taint {
     next_id: u64,
     /// (time, amount) of everything executed in the rolling window
     spent: Vec<(u64, u128)>,
+    /// What each address-book or payee cap has paid out in the window. Only a payment that cap itself allowed counts:
+    /// the agent paying a recipient an outside party named. The owner's own co-signs and owner-chosen recipients do not.
+    paid: BTreeMap<AccountId, Vec<(u64, u128)>>,
+    paused: bool,
+}
+
+/// The state before `paid` existed. `migrate` reads this and writes the current layout.
+#[near(serializers = [borsh])]
+struct OldTaint {
+    owner: AccountId,
+    mockdex: AccountId,
+    cfg: Config,
+    workers: BTreeSet<AccountId>,
+    book: BTreeMap<AccountId, BookEntry>,
+    pins: BTreeSet<AccountId>,
+    payees: BTreeMap<AccountId, BTreeMap<AccountId, u64>>,
+    flows: LookupSet<String>,
+    pending: BTreeMap<u64, PendingProposal>,
+    next_id: u64,
+    spent: Vec<(u64, u128)>,
     paused: bool,
 }
 
@@ -97,7 +123,53 @@ impl Taint {
             pending: BTreeMap::new(),
             next_id: 1,
             spent: Vec::new(),
+            paid: BTreeMap::new(),
             paused: false,
+        }
+    }
+
+    /// Carries the state of the previous layout over. Only the contract itself can call it, which `upgrade` does
+    /// right after deploying new code.
+    #[init(ignore_state)]
+    pub fn migrate() -> Self {
+        require!(env::predecessor_account_id() == env::current_account_id(), "migrate is private");
+        let old: OldTaint = env::state_read().unwrap_or_else(|| env::panic_str("no state to migrate"));
+        Self {
+            owner: old.owner,
+            mockdex: old.mockdex,
+            cfg: old.cfg,
+            workers: old.workers,
+            book: old.book,
+            pins: old.pins,
+            payees: old.payees,
+            flows: old.flows,
+            pending: old.pending,
+            next_id: old.next_id,
+            spent: old.spent,
+            paid: BTreeMap::new(),
+            paused: old.paused,
+        }
+    }
+
+    /// Called by this contract after a payment it scheduled. A payment that failed (a recipient account that does
+    /// not exist, say) leaves the money here, so its share of the rolling cap and of the recipient's cap is returned.
+    pub fn on_payment(&mut self, at: U64, amount: U128, counted_to: Option<AccountId>) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "on_payment is private");
+        if !matches!(env::promise_result_checked(0, 1024), Err(near_sdk::PromiseError::Failed)) {
+            return;
+        }
+        if let Some(i) = self.spent.iter().position(|e| *e == (at.0, amount.0)) {
+            self.spent.remove(i);
+        }
+        if let Some(to) = counted_to {
+            if let Some(list) = self.paid.get_mut(&to) {
+                if let Some(i) = list.iter().position(|e| *e == (at.0, amount.0)) {
+                    list.remove(i);
+                }
+                if list.is_empty() {
+                    self.paid.remove(&to);
+                }
+            }
         }
     }
 
@@ -125,9 +197,7 @@ impl Taint {
     /// bound the worker). It leaves the storage-staking reserve in place.
     pub fn withdraw(&mut self, to: AccountId, amount: U128) -> Promise {
         self.only_owner();
-        let reserve = env::storage_byte_cost().saturating_mul(env::storage_usage() as u128);
-        let available = env::account_balance().saturating_sub(reserve);
-        require!(NearToken::from_yoctonear(amount.0) <= available, "insufficient balance");
+        require!(NearToken::from_yoctonear(amount.0) <= self.spendable(), "insufficient balance");
         Promise::new(to).transfer(NearToken::from_yoctonear(amount.0))
     }
 
@@ -152,9 +222,14 @@ impl Taint {
         self.pins.insert(account);
     }
 
+    /// Also forgets every payee the account vouched for, so pinning it again starts from nothing.
     pub fn unpin_account(&mut self, account: AccountId) {
         self.only_owner();
         self.pins.remove(&account);
+        self.payees.retain(|_, by| {
+            by.remove(&account);
+            !by.is_empty()
+        });
     }
 
     /// Approve a held proposal. In production this arrives as an NEP-366 delegate action signed by the owner.
@@ -168,7 +243,7 @@ impl Taint {
         if now.saturating_sub(p.created_at.0) > PENDING_TTL_NS {
             env::panic_str("expired");
         }
-        let out = self.execute(proposal_id, &p.action);
+        let out = self.execute(proposal_id, &p.action, None);
         if !matches!(out, ProposalOutcome::Executed { .. }) {
             return out; // e.g. the rolling cap: the proposal stays pending and can be retried within its TTL
         }
@@ -221,7 +296,10 @@ impl Taint {
             Decision::Reject(reason) => ProposalOutcome::Rejected { reason },
             Decision::Execute => {
                 let id = self.take_id();
-                self.execute(id, &action)
+                // a payment to a recipient an outside party named is only allowed by that recipient's cap, so it uses it up
+                let uses_cap = action.kind == ActionKind::Transfer && prov.recipient.as_ref().is_some_and(|p| p.class == TrustClass::Untrusted);
+                let count_to = if uses_cap { action.recipient.clone() } else { None };
+                self.execute(id, &action, count_to)
             }
             Decision::Pending(_) if self.pending.len() >= MAX_PENDING => {
                 ProposalOutcome::Rejected { reason: "too many pending".into() }
@@ -273,6 +351,12 @@ impl Taint {
         require!(env::predecessor_account_id() == self.owner, "owner only");
     }
 
+    /// Balance that is not locked up backing the contract's storage.
+    fn spendable(&self) -> NearToken {
+        let reserve = env::storage_byte_cost().saturating_mul(env::storage_usage() as u128);
+        env::account_balance().saturating_sub(reserve)
+    }
+
     fn take_id(&mut self) -> u64 {
         let id = self.next_id;
         self.next_id += 1;
@@ -292,31 +376,40 @@ impl Taint {
     }
 
     /// Enforce the rolling cap and the contract's balance, then schedule the payment.
-    fn execute(&mut self, id: u64, action: &ProposedAction) -> ProposalOutcome {
+    fn execute(&mut self, id: u64, action: &ProposedAction, count_to: Option<AccountId>) -> ProposalOutcome {
         if self.paused {
             return ProposalOutcome::Rejected { reason: "paused".into() };
         }
         let now = env::block_timestamp();
         let amount = action.amount.0;
         self.spent.retain(|(ts, _)| now.saturating_sub(*ts) < DAY_NS);
+        self.paid.retain(|_, list| {
+            list.retain(|(ts, _)| now.saturating_sub(*ts) < DAY_NS);
+            !list.is_empty()
+        });
+        if self.spent.len() >= MAX_SPENT {
+            return ProposalOutcome::Rejected { reason: "too many payments".into() };
+        }
         let total: u128 = self.spent.iter().map(|(_, a)| a).sum();
         if total.checked_add(amount).map_or(true, |t| t > self.cfg.global_cap_24h.0) {
             return ProposalOutcome::Rejected { reason: "global cap exceeded".into() };
         }
-        if env::account_balance() < NearToken::from_yoctonear(amount) {
+        if self.spendable() < NearToken::from_yoctonear(amount) {
             return ProposalOutcome::Rejected { reason: "insufficient balance".into() };
         }
         self.spent.push((now, amount));
+        if let Some(to) = &count_to {
+            self.paid.entry(to.clone()).or_default().push((now, amount));
+        }
         let deposit = NearToken::from_yoctonear(amount);
-        match action.kind {
-            ActionKind::Transfer => {
-                let _ = Promise::new(action.recipient.clone().unwrap()).transfer(deposit);
-            }
+        let payment = match action.kind {
+            ActionKind::Transfer => Promise::new(action.recipient.clone().unwrap()).transfer(deposit),
             ActionKind::Swap => {
                 let args = near_sdk::serde_json::json!({ "token": action.token }).to_string().into_bytes();
-                let _ = Promise::new(self.mockdex.clone()).function_call("buy".to_string(), args, deposit, BUY_GAS);
+                Promise::new(self.mockdex.clone()).function_call("buy".to_string(), args, deposit, BUY_GAS)
             }
-        }
+        };
+        let _ = payment.then(Self::ext(env::current_account_id()).with_static_gas(CALLBACK_GAS).on_payment(U64(now), U128(amount), count_to));
         ProposalOutcome::Executed { proposal_id: id }
     }
 }
@@ -324,6 +417,10 @@ impl Taint {
 impl PolicyView for Taint {
     fn book_cap(&self, address: &AccountId, now: u64) -> Option<u128> {
         self.book.get(address).filter(|e| e.expires_at.0 > now).map(|e| e.cap.0)
+    }
+
+    fn paid_24h(&self, address: &AccountId, now: u64) -> u128 {
+        self.paid.get(address).map_or(0, |l| l.iter().filter(|(ts, _)| now.saturating_sub(*ts) < DAY_NS).map(|(_, a)| a).sum())
     }
 
     fn payee_cap(&self, address: &AccountId, now: u64) -> Option<u128> {
@@ -340,6 +437,24 @@ impl PolicyView for Taint {
             })
             .max()
     }
+}
+
+/// Replaces the contract's code with the bytes it is called with, then migrates the state. The owner's call, so the
+/// rules can change only with the owner's say-so even once the contract account has no key of its own.
+#[no_mangle]
+pub extern "C" fn upgrade() {
+    env::setup_panic_hook();
+    do_upgrade();
+}
+
+fn do_upgrade() {
+    let contract: Taint = env::state_read().unwrap_or_else(|| env::panic_str("no state"));
+    contract.only_owner();
+    let code = env::input().unwrap_or_else(|| env::panic_str("no code"));
+    let _ = Promise::new(env::current_account_id())
+        .deploy_contract(code)
+        .function_call("migrate".to_string(), Vec::new(), NearToken::from_yoctonear(0), MIGRATE_GAS)
+        .as_return();
 }
 
 #[cfg(test)]

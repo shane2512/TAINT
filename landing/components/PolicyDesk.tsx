@@ -46,7 +46,9 @@ export default function PolicyDesk({ caseCount }: { caseCount: number }) {
 
   useEffect(() => {
     let live = true;
-    const from = (v: string) => (v === "OWNER" ? "owner" : label);
+    // "owner" is the rules' own word for the owner; an outside source that is merely named that must not become one.
+    const outside = label.trim().toLowerCase() === "owner" ? "outside (named owner)" : label;
+    const from = (v: string) => (v === "OWNER" ? "owner" : outside);
     const swap = kind === "SWAP";
     const t = setTimeout(async () => {
       try {

@@ -85,11 +85,20 @@ describe("rate limit per client", () => {
     expect((await call("/attack", { ...as("b"), ...ip("2.2.2.2") }, { preset: "L2" })).status).toBe(200);
   });
 
-  it("believes the forwarded address only from a proxy that knows the key", async () => {
+  it("answers only the proxy that knows the key, so nobody can spoof an address or flood the visitor table directly", async () => {
     await start({ trustProxy: true, proxyKey: "k" });
-    for (let i = 0; i < 10; i++) await call("/attack", { "x-client-ip": `9.9.9.${i}`, "x-proxy-key": "wrong" }, { preset: "L2" });
-    expect((await call("/attack", { "x-client-ip": "8.8.8.8", "x-proxy-key": "wrong" }, { preset: "L2" })).status).toBe(429);
-    expect((await call("/attack", { "x-client-ip": "7.7.7.7", "x-proxy-key": "k" }, { preset: "L2" })).status).toBe(200);
+    const strangers: Record<string, string>[] = [{}, { "x-proxy-key": "wrong" }];
+    for (const headers of strangers) {
+      expect((await call("/attack", { ...headers, "x-client-ip": "9.9.9.9" }, { preset: "L2" })).status).toBe(403);
+      expect((await call("/wallet", headers)).status).toBe(403);
+      expect((await call("/wallet/pin", headers, { address: "a.testnet" })).status).toBe(403);
+    }
+    expect((await call("/attack", { "x-proxy-key": "k", "x-client-ip": "7.7.7.7" }, { preset: "L2" })).status).toBe(200);
+  });
+
+  it("still lets a host's health check read /meta without the key", async () => {
+    await start({ trustProxy: true, proxyKey: "k" });
+    expect((await call("/meta", {})).status).toBe(200);
   });
 
   it("does not believe a forwarded address unless a proxy is trusted", async () => {

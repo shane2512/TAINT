@@ -57,15 +57,33 @@ export interface RelayerOptions {
 
 const RPC = { testnet: "https://rpc.testnet.near.org", mainnet: "https://rpc.mainnet.near.org" } as const;
 
+/**
+ * What a relayed co-sign really did. A transaction can land and every receipt can succeed while the contract still
+ * refused the payment: `cosign` answers {Rejected: {reason}} (for example over the daily cap) as an ordinary return value.
+ * Undefined means the payment executed.
+ */
+export function failureOf(res: { status?: unknown; receipts_outcome?: { outcome: { status?: unknown } }[] }): string | undefined {
+  for (const st of [res.status, ...(res.receipts_outcome ?? []).map((r) => r.outcome.status)] as ({ Failure?: unknown; SuccessValue?: string } | undefined)[]) {
+    if (st?.Failure) return JSON.stringify(st.Failure);
+    if (st?.SuccessValue) {
+      try {
+        const v = JSON.parse(Buffer.from(st.SuccessValue, "base64").toString("utf8"));
+        if (v && typeof v === "object" && v.Rejected) return `contract refused: ${v.Rejected.reason}`;
+      } catch {
+        // a return value that is not JSON is not an outcome
+      }
+    }
+  }
+  return undefined;
+}
+
 /** Sends the delegate in a transaction signed by the relayer account. Returns the transaction hash. */
 export function makeSender(o: RelayerOptions): RelayDeps["send"] {
   const account = new Account(o.relayerAccount, new JsonRpcProvider({ url: o.rpcUrl ?? RPC[o.network] }), KeyPairSigner.fromSecretKey(o.relayerSecretKey as `ed25519:${string}`));
   return async (sd) => {
     const res = await account.signAndSendTransaction({ receiverId: sd.delegateAction.senderId, actions: [actionCreators.signedDelegate(sd)], throwOnFailure: false });
-    const failures = [res.status, ...(res.receipts_outcome ?? []).map((r: any) => r.outcome.status)]
-      .map((st: any) => st?.Failure)
-      .filter(Boolean);
-    return { txHash: res.transaction.hash as string, ...(failures.length ? { failure: JSON.stringify(failures[0]) } : {}) };
+    const failure = failureOf(res as Parameters<typeof failureOf>[0]);
+    return { txHash: res.transaction.hash as string, ...(failure ? { failure } : {}) };
   };
 }
 
