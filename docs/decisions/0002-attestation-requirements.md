@@ -58,3 +58,16 @@ The crypto path against a real quote. The crate has fixture tests for parts of t
 ## What the claim stays until then
 
 The worker is a plain registered key, not a TEE-attested one; provenance labels are only as trustworthy as the machine that runs the runtime. A leaked worker key can propose, but untrusted-derived values still need the owner and executed value is capped per day.
+
+## NEAR AI Cloud (docs.near.ai): what it is, and what it is not
+
+Read 2026-11-02 from `docs.near.ai` (including its `llms.txt` page index) and `near.ai`.
+
+**It is private, verifiable inference.** An OpenAI-compatible API in front of models that run in TEEs. Each model is labelled Confidential TEE (NEAR AI's own GPU fleet, with attestation and signatures), 3P Confidential TEE (a provider's own enclave) or Incognito (routed through the gateway, which runs in a TEE). A developer gets: gateway attestation, per-model hardware attestation reports (also endorsed by Intel), and response signatures. For a `provider_tee` model the signed text is `<model id>:<SHA-256 of the exact request>:<SHA-256 of the exact response>`, verified against a signing key that a verified attestation report vouches for. Setup is an account at cloud.near.ai, purchased credits and an API key.
+
+**It is not a place to run our own code.** The index has no compute, container or agent hosting; only inference, attestation, signatures and SDKs. I found no NEAR-run service for hosting a custom worker, and the documented route for that remains the Shade Agent Framework on Phala (above). I cannot rule out something undocumented.
+
+**What it would and would not give TAINT.**
+- It could attest the **model**: that the planner and extractor outputs came from a named model running in a TEE, with a signature over the exact bytes. It also keeps the text the model reads (which is attacker-controlled) private from the host.
+- It does **not** attest the **worker**: the code that labels each value as owner or outside and calls `propose`. That is the part the threat model depends on ("a compromised host can fabricate provenance"), and only the Shade/Phala route addresses it.
+- So the two are different properties, not alternatives. Neither has been built into TAINT. Whether the NEAR AI models can enforce the strict JSON schemas our parsers rely on has not been checked.
