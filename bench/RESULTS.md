@@ -146,6 +146,14 @@ Checked: 10 browser tests with a fake wallet and a stub RPC node (the call the w
 
 **Not checked: a real signature.** Nobody has yet signed with the real owner wallet. The owner key has to be imported into a testnet wallet for that. The relayed demo-key path (`npm run cosign-web`) is unchanged and is what produced the transactions linked above.
 
+## 2026-11-02 The attestation code is deployed (and nothing has been attested)
+
+The contract with `register_attested_worker` and the owner's approvals was deployed to testnet by the owner's `upgrade` call ([tx](https://testnet.nearblocks.io/txns/CNkj2VTNBfe5XSy7tXZNQpemBoJBDRKUvzRmBNtwC7i1)): deploy and migrate both succeeded, no key was needed, and the address book, pins, pending list and spend are identical to before. `get_attestation` answers with nothing approved, `require_tee` off and a 24 hour expiry, and the plain worker key still works. The co-sign demo was then run against it: held, relayed, executed, replay rejected ([executed](https://testnet.nearblocks.io/txns/6RQ562LYPWP9ccFSVV6TN9t1UAFpuQwRuk3hPgM3tjok)).
+
+Two things the first attempt taught: the 1.58 MB binary was refused by the network (`413 Payload Too Large`) before anything ran, so nothing changed; stripping the symbol table (`strip = "symbols"` in the release profile) brought it to 937 KB with the same code, and that deployed. That also locks about 9.4 NEAR in storage, not the roughly 16 NEAR the larger binary would have.
+
+**What this is not.** No measurements or hardware are approved, no worker has registered, and `require_tee` is off, so the deployed contract behaves exactly as before. A genuine attestation has never been accepted by this code. That needs a worker running in a real TEE.
+
 ## Not done (needs credentials or tooling)
 
 

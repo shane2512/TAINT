@@ -1,6 +1,6 @@
 # 0002: What real worker attestation needs, checked against the current docs
 
-Status: researched 2026-11-02. **The contract side is built and tested (not deployed); the worker side is not.** Attestation is still stubbed ([0001](0001-attestation.md)); every command still prints `ATTESTATION STUBBED`.
+Status: researched 2026-11-02. **The contract side is built, tested and deployed to testnet (switched off); the worker side is not.** Attestation is still stubbed ([0001](0001-attestation.md)); every command still prints `ATTESTATION STUBBED`.
 
 ## Update, same day: what was built
 
@@ -17,7 +17,7 @@ Everything is stored under one storage key, so the contract's state layout did n
 
 **Tested (18 new unit tests, 90 in all):** implicit-account rule, deposit, owner-only on every setting, the report data passed to the check is the account's key, expiry and renewal, revocation by removing an approval, the worker bound, and gating of `propose`. **Not tested, because it needs a real Intel TDX quote:** a genuine attestation being accepted. The tests use a stand-in verifier for that case. The real verifier is tested only in that it refuses a fake quote.
 
-**Cost:** the wasm grows from about 601 KB to 1.58 MB, which locks roughly 10 more NEAR in storage. The testnet contract holds about 17.7 NEAR, so after the upgrade only about 1.8 NEAR would be spendable until it is topped up. Gas for a real verification has not been measured.
+**Cost:** the wasm grew from about 601 KB to 1.58 MB, which the network refused to accept as one transaction (413). Stripping the symbol table brought it to 937 KB, which deployed on 2026-11-02; that locks about 9.4 NEAR in storage and leaves about 8 NEAR of the testnet contract's 17.7 spendable. Gas for a real verification has not been measured.
 
 ## What is still needed
 
