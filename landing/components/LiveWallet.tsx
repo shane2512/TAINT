@@ -72,13 +72,12 @@ async function realWallet(info: LiveInfo): Promise<WalletLike> {
   const { actionCreators } = await import("@near-js/transactions");
   const { setupWalletSelector } = await import("@near-wallet-selector/core");
   const { setupModal } = await import("@near-wallet-selector/modal-ui");
-  const { setupMyNearWallet } = await import("@near-wallet-selector/my-near-wallet");
   const { setupMeteorWallet } = await import("@near-wallet-selector/meteor-wallet");
   // The wallet library defaults to the public RPC that now rate limits and says it is deprecated: name a working one.
   const network = info.network === "mainnet"
     ? { networkId: "mainnet", nodeUrl: rpcFor("mainnet"), helperUrl: "https://helper.mainnet.near.org", explorerUrl: "https://nearblocks.io", indexerUrl: "https://api.kitwallet.app" }
     : { networkId: "testnet", nodeUrl: rpcFor("testnet"), helperUrl: "https://helper.testnet.near.org", explorerUrl: "https://testnet.nearblocks.io", indexerUrl: "https://testnet-api.kitwallet.app" };
-  const selector = await setupWalletSelector({ network, modules: [setupMeteorWallet(), setupMyNearWallet()] });
+  const selector = await setupWalletSelector({ network, modules: [setupMeteorWallet()] });
   const modal = setupModal(selector, { contractId: info.contractId });
   const account = () => selector.store.getState().accounts.find((a) => a.active)?.accountId ?? null;
   return {
@@ -87,7 +86,7 @@ async function realWallet(info: LiveInfo): Promise<WalletLike> {
     disconnect: async () => (await selector.wallet()).signOut(),
     signMessage: async (message, recipient) => {
       const wallet = await selector.wallet();
-      if (!wallet.signMessage) throw new Error("this wallet cannot sign messages; use Meteor or MyNearWallet");
+      if (!wallet.signMessage) throw new Error("this wallet cannot sign messages");
       const nonce = crypto.getRandomValues(new Uint8Array(32));
       const out = await wallet.signMessage({ message, recipient, nonce: nonce as unknown as Buffer });
       if (!out) throw new Error("the wallet returned no signature");
@@ -222,7 +221,7 @@ export function AccountGate({ children }: { children: React.ReactNode }) {
     return (
       <section className="gate" data-testid="gate-connect" aria-label="Connect your wallet">
         <h2 className="h-sm">Connect your own testnet wallet.</h2>
-        <p className="hint">Your payments here are real {info.network} transactions from an account in <code>{info.contractId}</code> that only you control. You need a {info.network} account with some test NEAR: <a href="https://near-faucet.io/" target="_blank" rel="noreferrer">get free test NEAR</a>, then <a href="https://wallet.meteorwallet.app/" target="_blank" rel="noreferrer">use Meteor Wallet or MyNearWallet</a>.</p>
+        <p className="hint">Your payments here are real {info.network} transactions from an account in <code>{info.contractId}</code> that only you control. You need a {info.network} account with some test NEAR: <a href="https://near-faucet.io/" target="_blank" rel="noreferrer">get free test NEAR</a>, then <a href="https://meteorwallet.app/" target="_blank" rel="noreferrer">install the Meteor Wallet extension</a> (without it, Meteor opens its own wallet window).</p>
         <button className="btn primary" onClick={live.connect} disabled={!live.ready} data-testid="wallet-connect">Connect wallet</button>
       </section>
     );
