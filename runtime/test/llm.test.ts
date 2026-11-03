@@ -181,3 +181,31 @@ describe("llm client", () => {
     expect(await complete(req("extractor:abc"))).toBe("x");
   });
 });
+
+describe("provider order and limits", () => {
+  const ok = (text: string) => ({ chat: { completions: { create: async () => ({ choices: [{ message: { content: text } }] }) } } });
+  it("uses NEAR AI first when its key is set, then the LLM_* provider", async () => {
+    const { providers } = await import("../src/llm");
+    const list = providers({ NEAR_CLOUD_AI: "k", LLM_API_KEY: "g", LLM_BASE_URL: "https://g/v1", LLM_MODEL: "gm" } as any);
+    expect(list.map((p) => p.name)).toEqual(["near-ai", "groq"]);
+    expect(list[0].baseURL).toBe("https://cloud-api.near.ai/v1");
+    expect(list[1].model).toBe("gm");
+  });
+  it("uses only LLM_* when there is no NEAR AI key", async () => {
+    const { providers } = await import("../src/llm");
+    expect(providers({ LLM_API_KEY: "g", LLM_MODEL: "gm" } as any).map((p) => p.name)).toEqual(["groq"]);
+  });
+  it("limits NEAR AI calls per hour", async () => {
+    const { providers } = await import("../src/llm");
+    expect(providers({ NEAR_CLOUD_AI: "k", NEAR_AI_MAX_PER_HOUR: "3" } as any)[0].maxPerHour).toBe(3);
+  });
+  it("still answers through an injected client", async () => {
+    const was = process.env.MOCK;
+    process.env.MOCK = "0";
+    try {
+      expect(await complete({ role: "planner", system: "s", user: "u", recordingKey: "k" }, { client: ok("fine") as any })).toBe("fine");
+    } finally {
+      process.env.MOCK = was;
+    }
+  });
+});

@@ -22,7 +22,7 @@ async function main(): Promise<void> {
   if (network === "mainnet") throw new Error("cosign-web is testnet-only: it signs with a key held by this process");
   const contractId = need("TAINT_CONTRACT");
   const ownerId = need("OWNER_ACCOUNT");
-  const client = new NearContractClient({ network, contractId, workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY") });
+  const client = new NearContractClient({ network, contractId, workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY"), owner: need("OWNER_ACCOUNT") });
   const owner = new Account(ownerId, new JsonRpcProvider({ url: "https://rpc.testnet.near.org" }), KeyPairSigner.fromSecretKey(need("OWNER_PRIVATE_KEY") as `ed25519:${string}`));
   const send = makeSender({ network, contractId, owner: ownerId, relayerAccount: need("RELAYER_ACCOUNT"), relayerSecretKey: need("RELAYER_PRIVATE_KEY") });
 

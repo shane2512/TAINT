@@ -49,36 +49,57 @@ export class NearViewClient {
     this.provider = new JsonRpcProvider({ url: o.rpcUrl ?? RPC[o.network] });
   }
 
-  private async view(methodName: string): Promise<any[]> {
-    return ((await this.provider.callFunction(this.o.contractId, methodName, {})) as any[] | undefined) ?? [];
+  private async view(methodName: string, owner: string): Promise<any> {
+    return this.provider.callFunction(this.o.contractId, methodName, { owner });
   }
 
-  async getPending(): Promise<PendingProposal[]> {
-    return mapPending(await this.view("get_pending"));
+  async getPending(owner: string): Promise<PendingProposal[]> {
+    return mapPending(((await this.view("get_pending", owner)) as [number, any][] | undefined) ?? []);
   }
 
-  async getBook(): Promise<BookEntry[]> {
-    return mapBook(await this.view("get_book"));
+  async getBook(owner: string): Promise<BookEntry[]> {
+    return mapBook(((await this.view("get_book", owner)) as [string, any][] | undefined) ?? []);
   }
+
+  async getPins(owner: string): Promise<string[]> {
+    return ((await this.view("get_pins", owner)) as string[] | undefined) ?? [];
+  }
+
+  async getSpent24h(owner: string): Promise<string> {
+    return ((await this.view("get_spent_24h", owner)) as string | undefined) ?? "0";
+  }
+
+  /** null when the owner has not opened an account. */
+  async getAccount(owner: string): Promise<AccountInfo | null> {
+    return ((await this.view("get_account", owner)) as AccountInfo | null | undefined) ?? null;
+  }
+}
+
+export interface AccountInfo {
+  balance: string;
+  paused: boolean;
+  workers: string[];
+  config: { remember_cap: string; remember_ttl_ns: string; payee_cooldown_ns: string; payee_cooldown_cap: string; global_cap_24h: string };
 }
 
 export interface NearClientOptions {
   network: "testnet" | "mainnet";
   contractId: string;
+  /** Whose account in the contract this client proposes for. */
+  owner: string;
   workerAccount: string;
   workerSecretKey: string;
   rpcUrl?: string;
 }
 
-/**
- * LIVE: calls the deployed taint.near as the registered worker.
- * UNTESTED until taint.near is deployed (plan Task 5); its view-JSON mapping follows the Rust types in plan Task 3.
- */
+/** LIVE: calls the deployed taint.near as a worker the owner authorised, proposing for that owner's account. */
 export class NearContractClient implements ContractClient {
   private account: Account;
   private contractId: string;
+  private owner: string;
 
   constructor(o: NearClientOptions) {
+    this.owner = o.owner;
     const provider = new JsonRpcProvider({ url: o.rpcUrl ?? RPC[o.network] });
     const signer = KeyPairSigner.fromSecretKey(o.workerSecretKey as `ed25519:${string}`);
     this.account = new Account(o.workerAccount, provider, signer);
@@ -89,7 +110,7 @@ export class NearContractClient implements ContractClient {
     const res = await this.account.callFunctionRaw({
       contractId: this.contractId,
       methodName: "propose",
-      args: { action, prov, flow_hash: flowHash },
+      args: { owner: this.owner, action, prov, flow_hash: flowHash },
       gas: GAS,
       deposit: 0n,
     });
@@ -100,18 +121,18 @@ export class NearContractClient implements ContractClient {
   }
 
   async getPending(): Promise<PendingProposal[]> {
-    return mapPending((await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pending", args: {} })) as [number, any][]);
+    return mapPending((await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pending", args: { owner: this.owner } })) as [number, any][]);
   }
 
   async getBook(): Promise<BookEntry[]> {
-    return mapBook((await this.account.viewFunction({ contractId: this.contractId, methodName: "get_book", args: {} })) as [string, any][]);
+    return mapBook((await this.account.viewFunction({ contractId: this.contractId, methodName: "get_book", args: { owner: this.owner } })) as [string, any][]);
   }
 
   async getPins(): Promise<string[]> {
-    return (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pins", args: {} })) as string[];
+    return (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_pins", args: { owner: this.owner } })) as string[];
   }
 
   async getSpent24h(): Promise<string> {
-    return (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_spent_24h", args: {} })) as string;
+    return (await this.account.viewFunction({ contractId: this.contractId, methodName: "get_spent_24h", args: { owner: this.owner } })) as string;
   }
 }

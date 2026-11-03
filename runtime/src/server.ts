@@ -17,7 +17,9 @@ import { describePending, formatNear } from "./cosign-view";
 import { parseAccount, parseAmountYocto } from "./handles";
 import { mode } from "./llm";
 import { MockContract, defaultMockConfig, type BookEntry, type PendingProposal } from "./mock-contract";
-import { MockContractClient, NearViewClient } from "./near";
+import { createLive, type LiveOptions } from "./live";
+import { MockContractClient, NearContractClient, NearViewClient } from "./near";
+import { rpcKeyCheck } from "./nep413";
 import { signOwnerMessage } from "./owner";
 import type { ArgProvenance, Provenance, ProposedAction } from "./proposal";
 import { provenanceLine } from "./provenance";
@@ -53,6 +55,8 @@ export interface ChainView {
 export interface ServerOptions {
   chain?: ChainCosign;
   chainView?: ChainView;
+  /** The public site's real path: visitors' own wallets, the contract on a real network, a real model. */
+  live?: Omit<LiveOptions, "label">;
   /** A real model with simulated payments, so free-text attacks work. Nothing touches a chain. */
   liveModel?: boolean;
   now?: () => number;
@@ -108,7 +112,7 @@ function readBody(req: http.IncomingMessage): Promise<string> {
 }
 
 export function createAppServer(o: ServerOptions = {}): http.Server {
-  if (mode() === "LIVE" && !o.chain && !o.liveModel) {
+  if (mode() === "LIVE" && !o.chain && !o.liveModel && !o.live) {
     throw new Error("LIVE server requires funded test accounts and a live executor (not configured). Run with MOCK=1.");
   }
   if (o.publicDemo && (o.chain || o.liveModel)) throw new Error("a public demo runs on simulated payments and recorded model answers only");
@@ -143,6 +147,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
     const trusted = o.trustProxy && (!o.proxyKey || req.headers["x-proxy-key"] === o.proxyKey);
     return trusted && typeof fwd === "string" && fwd ? fwd.slice(0, 64) : (req.socket.remoteAddress ?? "?");
   };
+
+  const live = o.live ? createLive({ ...o.live, now: o.live.now ?? now, label: (k, r) => (k === "unknown" ? r.outcome : label(k, r.outcome)) }, clientId) : undefined;
 
   const allowed = (ip: string): boolean => {
     const t = now();
@@ -335,6 +341,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
         return json(res, 403, { error: "forbidden" });
       }
       if (req.method === "POST" && !isJson(req)) return json(res, 415, { error: "send application/json" });
+      if (live && (await live.handle(req, res, url))) return;
+      if (live && !["/meta", "/policy/evaluate", "/policy/cases"].includes(url.pathname)) return json(res, 404, { error: "not found" });
       if (req.method === "POST" && url.pathname === "/attack") return o.chain ? json(res, 404, { error: "not found" }) : await attack(req, res);
       if (req.method === "POST" && url.pathname === "/cosign") return await cosign(req, res);
       if (req.method === "POST" && url.pathname === "/policy/evaluate") return await policyEvaluate(req, res);
@@ -372,9 +380,10 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
       }
       if (req.method === "GET" && url.pathname === "/meta") {
         return json(res, 200, {
-          banner: o.chain ? `[taint] network=${o.chain.network} real-chain co-sign (demo owner key from .env, not a wallet) ATTESTATION STUBBED` : banner("none"),
+          banner: o.live ? `[taint] network=${o.live.network} mode=LIVE visitors' own wallets, real contract ATTESTATION STUBBED` : o.chain ? `[taint] network=${o.chain.network} real-chain co-sign (demo owner key from .env, not a wallet) ATTESTATION STUBBED` : banner("none"),
           network: o.chain?.network ?? "none",
           publicDemo: o.publicDemo === true,
+          live: o.live !== undefined,
           mode: mode(),
           presets: loadFixtures().map((f) => ({ id: f.id, title: f.title, kind: f.kind, instruction: f.instruction, attachments: f.attachments })),
         });
@@ -388,7 +397,8 @@ export function createAppServer(o: ServerOptions = {}): http.Server {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const liveModel = process.argv.includes("--live-model");
-  if (liveModel) {
+  const liveChain = process.env.LIVE_CHAIN === "1";
+  if (liveModel || liveChain) {
     if (fs.existsSync(".env")) process.loadEnvFile(".env");
     delete process.env.MOCK;
   } else {
@@ -404,10 +414,33 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     ? (() => {
         const network = (process.env.NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
         const client = new NearViewClient({ network, contractId: viewContract, rpcUrl: process.env.NEAR_RPC_URL });
-        return { network, contractId: viewContract, ownerAccount: viewOwner, getPending: () => client.getPending(), getBook: () => client.getBook() };
+        return { network, contractId: viewContract, ownerAccount: viewOwner, getPending: () => client.getPending(viewOwner), getBook: () => client.getBook(viewOwner) };
       })()
     : undefined;
-  createAppServer({ liveModel, publicDemo, chainView, trustProxy: process.env.TRUST_PROXY === "1", proxyKey: process.env.PROXY_KEY }).listen(port, host, () => {
+  const live = liveChain
+    ? (() => {
+        const need = (k: string) => process.env[k] ?? (() => { throw new Error(`LIVE_CHAIN needs ${k}`); })();
+        const network = (process.env.NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
+        if (network === "mainnet") throw new Error("LIVE_CHAIN refuses mainnet: the public site runs on testnet");
+        const rpcUrl = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org";
+        const contractId = need("TAINT_CONTRACT");
+        const workerAccount = need("WORKER_ACCOUNT");
+        const workerSecretKey = need("WORKER_PRIVATE_KEY");
+        const view = new NearViewClient({ network, contractId, rpcUrl });
+        return {
+          network,
+          contractId,
+          workerAccount,
+          view,
+          clientFor: (owner: string) => new NearContractClient({ network, contractId, workerAccount, workerSecretKey, owner, rpcUrl }),
+          keyCheck: rpcKeyCheck(rpcUrl),
+          presets: loadFixtures().map((f) => ({ id: f.id, title: f.title, kind: f.kind, instruction: f.instruction, attachments: f.attachments })),
+          allowlist: loadConfig(baselineConfig),
+          limits: { perOwnerPerHour: Number(process.env.RUNS_PER_OWNER_HOUR ?? 6), perIpPerHour: Number(process.env.RUNS_PER_IP_HOUR ?? 12), perDay: Number(process.env.RUNS_PER_DAY ?? 200) },
+        };
+      })()
+    : undefined;
+  createAppServer({ liveModel, live, publicDemo: publicDemo && !live, chainView: live ? undefined : chainView, trustProxy: process.env.TRUST_PROXY === "1", proxyKey: process.env.PROXY_KEY }).listen(port, host, () => {
     console.log(banner("none"));
     console.log(`TAINT API: http://127.0.0.1:${port}/   The pages are in landing/: npm run site`);
   });

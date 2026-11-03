@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   if (fs.existsSync(".env")) process.loadEnvFile(".env");
   const network = (process.env.NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
   if (network === "mainnet") throw new Error("propose-testnet is testnet-only");
-  const client = new NearContractClient({ network, contractId: need("TAINT_CONTRACT"), workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY") });
+  const client = new NearContractClient({ network, contractId: need("TAINT_CONTRACT"), workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY"), owner: need("OWNER_ACCOUNT") });
   const src = { class: "Untrusted" as const, source: "x.com/@attacker" };
   const { outcome, txHash } = await client.propose(
     { kind: "Transfer", recipient: need("OWNER_ACCOUNT"), token: null, amount: (10n ** 21n).toString() },

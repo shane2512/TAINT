@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   const ownerId = need("OWNER_ACCOUNT");
   console.log(`[taint] network=${network} cosign-demo (real chain, real gas)`);
 
-  const worker = new NearContractClient({ network, contractId, workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY") });
+  const worker = new NearContractClient({ network, contractId, workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY"), owner: need("OWNER_ACCOUNT") });
   const amount = (10n ** 21n).toString(); // 0.001 NEAR
   const flowHash = "demo-" + Date.now();
 
