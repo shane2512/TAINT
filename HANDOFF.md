@@ -237,6 +237,7 @@ If item B9 or B10 or B11 is finished before recording, replace the last honesty 
 "AI agents read text attackers write, then spend money. Allowlists check where money goes. TAINT checks who decided: every value carries provenance, a NEAR contract gates it, unclear ones wait for one tap. Real-incident replay, honest table (allowlist ties on the attacks, blocks the real work). Built at NEAR HACKATHON. [video] github.com/shane2512/TAINT"
 
 ## 11. Claims policy (do not break)
+- **Credits:** the NEAR AI key has only about 10 credits. Ask the owner, with an estimated cost, before any run that spends them.
 - Say "simulated" for the public demo. Say "MOCK" for hand-authored model outputs. Say "LIVE" only with a real model and the network named.
 - Say "stubbed" for attestation until a real quote has been accepted by the contract on testnet.
 - Do not say TAINT stops prompt injection. It gates the value-bearing arguments of an action.

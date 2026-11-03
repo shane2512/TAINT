@@ -17,6 +17,7 @@ STEP 2 - WORK RULES (non-negotiable)
 - Do not loosen the strict parsers (extractor/planner/handles). Their strictness is a security property.
 - Do not break the contract upgrade path: the contract account has no access keys; only the owner calling `upgrade` can change it, and `migrate` must be able to read the previous state layout. Build with contract/.cargo/config.toml (--cfg near) and keep the release profile that strips symbols.
 - Secrets: never print, log, paste or commit any key (.env, ~/.near-credentials, API keys). Do not ask the user to paste a key into chat; tell them to put it in .env themselves. Do not create accounts, spend money, buy credits or install system software without asking.
+- PAID CREDITS: before any run that spends NEAR AI Cloud (or other paid LLM) credits - live replay, red team, model probes - stop and ask the owner, stating the estimated cost and number of calls. Only run after a clear yes. Free calls (model list, attestation report fetch) need no ask.
 - MAINNET: do not touch mainnet, NEAR Intents payouts or real funds without the owner's explicit go-ahead in this session.
 - Destructive or outward-facing actions need confirmation first: git push --force, deleting services or keys, making the repo public, posting anywhere, deploying to testnet/Vercel/Render, upgrading the contract. Ask, wait for a clear yes, then act.
 - Prefer small, reviewable commits with clear messages. Do not push unless asked.
