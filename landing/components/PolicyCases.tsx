@@ -12,7 +12,7 @@ export default function PolicyCases() {
         <h2 className="h-sm">Shared rule table</h2>
         <button className="btn ghost small" onClick={reload} disabled={loading}><Icon name="refresh" /> {loading ? "Running" : "Run again"}</button>
       </div>
-      <p className="hint">bench/policy-cases.json. The TypeScript mock runs it here. <code>npm run test:contract</code> runs the same file against the Rust contract.</p>
+      <p className="hint">bench/policy-cases.json. The TypeScript implementation of the rules runs it here. <code>npm run test:contract</code> runs the same file against the Rust contract.</p>
       {error && <ErrorNote>{error}</ErrorNote>}
       {data && (
         <>

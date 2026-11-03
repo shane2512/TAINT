@@ -41,7 +41,7 @@ export async function api<T = any>(path: string, body?: unknown): Promise<ApiRes
 }
 
 export interface Preset { id: string; title: string; kind: "attack" | "legit"; instruction: string; attachments: { source: string; text: string }[] }
-export interface Meta { banner: string; network: string; mode: string; publicDemo?: boolean; presets: Preset[] }
+export interface Meta { banner: string; network: string; mode: string; publicDemo?: boolean; live?: boolean; presets: Preset[] }
 
 export function useMeta() {
   const [meta, setMeta] = useState<Meta | null>(null);

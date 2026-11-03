@@ -17,7 +17,7 @@ async function forward(req: NextRequest, ctx: { params: Promise<{ path: string[]
   if (process.env.PROXY_KEY) headers["x-proxy-key"] = process.env.PROXY_KEY;
   let res: Response;
   try {
-    res = await fetch(`${base}/${path.join("/")}`, { method: req.method, headers, body: req.method === "POST" ? await req.text() : undefined, cache: "no-store", signal: AbortSignal.timeout(25_000) });
+    res = await fetch(`${base}/${path.join("/")}${req.nextUrl.search}`, { method: req.method, headers, body: req.method === "POST" ? await req.text() : undefined, cache: "no-store", signal: AbortSignal.timeout(25_000) });
   } catch {
     // A hosted runtime on a free plan sleeps when idle and takes about a minute to wake; a local one is simply not started.
     const local = /^https?:\/\/(127\.0\.0\.1|localhost)[:/]/.test(base);

@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useSharedMeta } from "../../../components/AppShell";
+import { LiveAccount } from "../../../components/LivePages";
 import { api, ErrorNote, PageHead, useApi } from "../../../components/ui";
 
 interface Entry { address: string; capNear: string; expiresAt: number; learnedFrom: string }
@@ -13,6 +15,11 @@ const OWNER_CALLS = [
 ];
 
 export default function WalletPage() {
+  const meta = useSharedMeta();
+  return meta?.live ? <LiveAccount /> : <LocalWallet />;
+}
+
+function LocalWallet() {
   const { data: w, error: loadError, reload, setData } = useApi<Wallet>("wallet");
   const [address, setAddress] = useState("");
   const [cap, setCap] = useState("");

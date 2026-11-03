@@ -141,7 +141,7 @@ export function Widget() {
           <input className="swap-big" value={recipientFrom === "Owner" ? "owner" : label} onChange={(e) => setLabel(e.target.value)} disabled={recipientFrom === "Owner"} aria-label="Where the recipient came from" spellCheck={false} />
           <button className="sel black" onClick={() => setRecipientFrom(recipientFrom === "Outside" ? "Owner" : "Outside")} aria-label={`Recipient chosen by ${recipientFrom}`}>{recipientFrom} <Icon name="chev" size={11} /></button>
         </div>
-        <div className="swap-sub"><span>Real rules, simulated payment</span><span>{d === "held" ? "needs your co-sign" : d === "executed" ? "no co-sign needed" : ""}</span></div>
+        <div className="swap-sub"><span>Real rules, no payment sent</span><span>{d === "held" ? "needs your co-sign" : d === "executed" ? "no co-sign needed" : ""}</span></div>
       </div>
       <div className={`swap-go ${d ?? ""}`} data-testid="widget-verdict" data-decision={d ?? ""} aria-live="polite">{text}</div>
       <ul className="swap-why" data-testid="widget-reasons">{err ? <li>{err}</li> : verdict?.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
@@ -206,33 +206,32 @@ export function Modes() {
       <div className="frame">
         <Lines lines={["Choose how you", "run it."]} />
         <div className="plans" data-stagger>
-          <article className="plan dark" data-testid="mode-sim">
-            <p className="plan-tag"><i />SIMULATED</p>
-            <h3 className="plan-name">No wallet needed</h3>
-            <p className="plan-lede">Try it with no wallet. Three agents, one attack, the real rules. Payments are simulated.</p>
-            <h4>Includes</h4>
-            <ul>
-              <li><Icon name="right" size={12} />Rob the Pet: three wallets, five fixtures</li>
-              <li><Icon name="right" size={12} />The policy desk and the shared rule table</li>
-              <li><Icon name="right" size={12} />Twelve red-team attacks, run live</li>
-              <li><Icon name="right" size={12} />A private wallet for each visitor</li>
-            </ul>
-            <Link className="btn solid" href="/demo">Try the demo <Icon name="right" size={12} /></Link>
-          </article>
-          <article className="plan hot" data-testid="mode-testnet">
-            <div className="plan-bg" aria-hidden />
+          <article className="plan dark" data-testid="mode-testnet">
             <p className="plan-tag"><i />TESTNET</p>
-            <h3 className="plan-name">Your wallet, a 5 NEAR daily cap</h3>
-            <p className="plan-lede">The real contract. Your own wallet signs the approval. A leaked worker key can send at most the daily cap.</p>
+            <h3 className="plan-name">Your own wallet</h3>
+            <p className="plan-lede">Connect a testnet wallet, open an account in the contract, and run the attacks. Your account is yours: you deposit, you approve, you withdraw.</p>
             <h4>Includes</h4>
             <ul>
+              <li><Icon name="right" size={12} />Rob the Pet: three wallets, five fixtures, or your own text</li>
               <li><Icon name="right" size={12} />Held payments read from the contract</li>
-              <li><Icon name="right" size={12} />Your wallet signs, no key on this site</li>
-              <li><Icon name="right" size={12} />A rolling 24 hour cap, per address too</li>
-              <li><Icon name="right" size={12} />Every approval on the block explorer</li>
+              <li><Icon name="right" size={12} />Your wallet signs every run and every approval</li>
               <li><Icon name="right" size={12} />Pause, revoke and withdraw for the owner</li>
             </ul>
-            <Link className="btn solid" href="/cosign">Approve with your wallet <Icon name="right" size={12} /></Link>
+            <Link className="btn solid" href="/demo">Connect and try it <Icon name="right" size={12} /></Link>
+          </article>
+          <article className="plan hot" data-testid="mode-offline">
+            <div className="plan-bg" aria-hidden />
+            <p className="plan-tag"><i />OFFLINE</p>
+            <h3 className="plan-name">Run it from the repository</h3>
+            <p className="plan-lede">No keys, no network: the same rules against recorded model answers and a simulated wallet. It is how the tests and the reproducible benchmark run.</p>
+            <h4>Includes</h4>
+            <ul>
+              <li><Icon name="right" size={12} />The policy desk and the shared rule table</li>
+              <li><Icon name="right" size={12} />Twelve scripted red-team attacks</li>
+              <li><Icon name="right" size={12} />A live-model mode with simulated payments</li>
+              <li><Icon name="right" size={12} />Every number in the results, repeatable</li>
+            </ul>
+            <a className="btn solid" href="https://github.com/shane2512/TAINT" target="_blank" rel="noreferrer">Get the repository <Icon name="ne" size={12} /></a>
           </article>
         </div>
         <p className="fine" data-reveal>Neither mode touches mainnet. The attestation is stubbed. The contract account has no keys, so only the owner can change it; both are stated in the README.</p>

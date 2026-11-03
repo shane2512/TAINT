@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   const contractId = need("TAINT_CONTRACT");
   const ownerId = need("OWNER_ACCOUNT");
   const client = new NearContractClient({ network, contractId, workerAccount: need("WORKER_ACCOUNT"), workerSecretKey: need("WORKER_PRIVATE_KEY"), owner: need("OWNER_ACCOUNT") });
-  const owner = new Account(ownerId, new JsonRpcProvider({ url: "https://rpc.testnet.near.org" }), KeyPairSigner.fromSecretKey(need("OWNER_PRIVATE_KEY") as `ed25519:${string}`));
+  const owner = new Account(ownerId, new JsonRpcProvider({ url: "https://test.rpc.fastnear.com" }), KeyPairSigner.fromSecretKey(need("OWNER_PRIVATE_KEY") as `ed25519:${string}`));
   const send = makeSender({ network, contractId, owner: ownerId, relayerAccount: need("RELAYER_ACCOUNT"), relayerSecretKey: need("RELAYER_PRIVATE_KEY") });
 
   if (process.argv.includes("--propose")) {

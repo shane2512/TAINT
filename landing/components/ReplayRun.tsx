@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
+import { useSharedMeta } from "./AppShell";
 import { api, ErrorNote, Icon, Outcome } from "./ui";
 
 interface Row { fixture: string; agent: string; outcome: string; expected: string; matchesExpect: boolean }
 
 export default function ReplayRun() {
+  const meta = useSharedMeta();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +23,7 @@ export default function ReplayRun() {
     }
   }
 
+  if (meta?.live) return null; // the live site shows only measured runs
   const fixtures = [...new Set(rows?.map((r) => r.fixture))];
   const cell = (f: string, a: string) => rows!.find((r) => r.fixture === f && r.agent === a)!;
   return (

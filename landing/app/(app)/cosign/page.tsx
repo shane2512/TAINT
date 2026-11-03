@@ -3,6 +3,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSharedMeta } from "../../../components/AppShell";
+import { LiveCosign } from "../../../components/LivePages";
 import { api, ErrorNote, Icon, PageHead, useApi } from "../../../components/ui";
 
 interface Pending {
@@ -64,6 +65,11 @@ function Card({ item }: { item: Pending }) {
 }
 
 export default function CosignPage() {
+  const meta = useSharedMeta();
+  return meta?.live ? <LiveCosign /> : <LocalCosign />;
+}
+
+function LocalCosign() {
   const meta = useSharedMeta();
   const [walletOpen, setWalletOpen] = useState(false);
   const { data, error, loading, reload } = useApi<Pending[]>("pending");

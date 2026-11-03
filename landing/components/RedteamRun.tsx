@@ -1,14 +1,21 @@
 "use client";
 import { useState } from "react";
+import { useSharedMeta } from "./AppShell";
 import { api, ErrorNote, Icon, Outcome } from "./ui";
-import type { AttemptView } from "../lib/data";
+import type { AttemptView, ScriptedRow } from "../lib/data";
 
 interface Row { id: string; outcome: string; fundsMovedWithoutCosign: boolean; byDesign: boolean; matchesExpect: boolean; paidTo?: string | null }
 interface Summary { attempts: number; held: number; byDesign: number; failures: number; unexpected: number }
 
-export default function RedteamRun({ attempts }: { attempts: AttemptView[] }) {
-  const [rows, setRows] = useState<Record<string, Row> | null>(null);
-  const [summary, setSummary] = useState<Summary | null>(null);
+export default function RedteamRun({ attempts, scripted }: { attempts: AttemptView[]; scripted: ScriptedRow[] }) {
+  const meta = useSharedMeta();
+  const live = meta?.live === true;
+  const saved = Object.fromEntries(scripted.map((x) => [x.id, x as Row]));
+  const savedSummary: Summary = { attempts: scripted.length, held: scripted.filter((x) => !x.fundsMovedWithoutCosign).length, byDesign: scripted.filter((x) => x.fundsMovedWithoutCosign && x.byDesign).length, failures: scripted.filter((x) => x.fundsMovedWithoutCosign && !x.byDesign).length, unexpected: scripted.filter((x) => !x.matchesExpect).length };
+  const [ran, setRows] = useState<Record<string, Row> | null>(null);
+  const [ranSummary, setSummary] = useState<Summary | null>(null);
+  const rows = ran ?? (live ? saved : null);
+  const summary = ranSummary ?? (live ? savedSummary : null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +34,9 @@ export default function RedteamRun({ attempts }: { attempts: AttemptView[] }) {
   return (
     <section aria-label="Run the red team">
       <div className="toolbar">
-        <button className="btn primary" onClick={run} disabled={busy}>{busy ? "Running" : rows ? "Run again" : "Run all twelve"} <Icon name="right" /></button>
+        {live
+          ? <p className="hint" data-testid="redteam-saved">Recorded run of the scripted adversary (<code>npm run redteam</code> repeats it). The live-model runs are below.</p>
+          : <button className="btn primary" onClick={run} disabled={busy}>{busy ? "Running" : rows ? "Run again" : "Run all twelve"} <Icon name="right" /></button>}
         {summary && (
           <p className="tally" data-testid="redteam-summary">
             <b>{summary.held}</b> held or refused <b>{summary.byDesign}</b> moved by design <b className={summary.failures ? "red" : ""}>{summary.failures}</b> failures

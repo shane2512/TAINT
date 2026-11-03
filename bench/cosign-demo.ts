@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   const { proposal_id, proposal_hash, reasons } = outcome.Pending;
   console.log(`1. HELD  proposal ${proposal_id}: ${reasons.join("; ")}\n   ${link(txHash)}`);
 
-  const provider = new JsonRpcProvider({ url: network === "mainnet" ? "https://rpc.mainnet.near.org" : "https://rpc.testnet.near.org" });
+  const provider = new JsonRpcProvider({ url: network === "mainnet" ? "https://free.rpc.fastnear.com" : "https://test.rpc.fastnear.com" });
   const owner = new Account(ownerId, provider, KeyPairSigner.fromSecretKey(need("OWNER_PRIVATE_KEY") as `ed25519:${string}`));
   const signed = await buildCosignDelegate(owner, contractId, proposal_id, proposal_hash, false);
   const b64 = encodeForRelay(signed);

@@ -10,6 +10,7 @@
     "replay": "tsx bench/replay.ts",
     "gen-recordings": "tsx bench/gen-recordings.ts",
     "redteam": "tsx bench/redteam.ts",
+    "redteam:save": "tsx bench/redteam-scripted.ts",
     "web": "tsx runtime/src/server.ts",
     "site": "npm --prefix landing run dev",
     "test:e2e": "npm --prefix landing run test:e2e",

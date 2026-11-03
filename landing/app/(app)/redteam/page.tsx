@@ -1,14 +1,14 @@
 import RedteamRun from "../../../components/RedteamRun";
 import { PageHead } from "../../../components/ui";
-import { attempts, liveRedteams } from "../../../lib/data";
+import { attempts, liveRedteams, scriptedRedteam } from "../../../lib/data";
 
 export default function RedteamPage() {
   return (
     <div>
       <PageHead title="The red team.">
-        This run assumes the model believed every attack and hands it the attacker&apos;s output. It tests the deterministic layers: parsers, handle typing, literal grounding and the contract gate.
+        A scripted adversary: it hands the system the attacker&apos;s output as if the model had believed every attack, then checks that the deterministic layers still hold: parsers, handle typing, literal grounding and the contract gate.
       </PageHead>
-      <RedteamRun attempts={attempts()} />
+      <RedteamRun attempts={attempts()} scripted={scriptedRedteam()} />
       <section className="block" aria-label="Saved live runs">
         <h2 className="h-sm">Saved live-model runs</h2>
         <p className="hint">A real model, not told it was being attacked, with simulated payments. Error rows are API failures and say nothing either way, so neither run is a clean full measurement.</p>

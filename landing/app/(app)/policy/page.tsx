@@ -8,7 +8,7 @@ export default function PolicyPage() {
   return (
     <div>
       <PageHead title="The policy.">
-        Build a proposal and say where each value came from. The answer comes from the real rules, on a fresh mock contract each time.
+        Build a proposal and say where each value came from. The answer comes from the TypeScript implementation of the contract&apos;s rules, run fresh each time. Twenty-four shared cases check it against the Rust contract.
       </PageHead>
       <PolicyDesk caseCount={n} />
       <PolicyCases />

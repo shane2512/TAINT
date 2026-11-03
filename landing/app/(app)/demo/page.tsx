@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Halftone } from "../../../components/Halftone";
 import { useSharedMeta } from "../../../components/AppShell";
+import { LiveDemo } from "../../../components/LivePages";
 import { api, ErrorNote, Icon, Outcome, OUTCOME, PageHead, useApi } from "../../../components/ui";
 
 const PETS = [
@@ -32,6 +33,12 @@ function Pet({ pet, r, busy }: { pet: (typeof PETS)[number]; r?: Result; busy: b
 }
 
 export default function DemoPage() {
+  const meta = useSharedMeta();
+  return meta?.live ? <LiveDemo /> : <LocalDemo />;
+}
+
+/** The offline version for the repository: recorded model answers and a simulated wallet. */
+function LocalDemo() {
   const meta = useSharedMeta();
   const log = useApi<LogRow[]>("log");
   const [selected, setSelected] = useState<string | null>(null);

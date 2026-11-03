@@ -422,7 +422,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         const need = (k: string) => process.env[k] ?? (() => { throw new Error(`LIVE_CHAIN needs ${k}`); })();
         const network = (process.env.NEAR_NETWORK ?? "testnet") as "testnet" | "mainnet";
         if (network === "mainnet") throw new Error("LIVE_CHAIN refuses mainnet: the public site runs on testnet");
-        const rpcUrl = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org";
+        const rpcUrl = process.env.NEAR_RPC_URL ?? "https://test.rpc.fastnear.com";
         const contractId = need("TAINT_CONTRACT");
         const workerAccount = need("WORKER_ACCOUNT");
         const workerSecretKey = need("WORKER_PRIVATE_KEY");

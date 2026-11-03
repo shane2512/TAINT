@@ -113,7 +113,7 @@ export default function PolicyDesk({ caseCount }: { caseCount: number }) {
           {tab === "RULES" && <ol className="pbody rules">{RULES.map((r) => <li key={r}>{r}</li>)}</ol>}
         </div>
       </div>
-      <div className="deskfoot"><span>RUNS THE MOCK CONTRACT</span><span>{caseCount} SHARED CASES</span><span>TS / RUST / JSON</span><span>NOTHING HERE MOVES FUNDS</span></div>
+      <div className="deskfoot"><span>CONTRACT RULES, TYPESCRIPT</span><span>{caseCount} SHARED CASES</span><span>TS / RUST / JSON</span><span>THIS CALCULATOR MOVES NO FUNDS</span></div>
     </div>
   );
 }

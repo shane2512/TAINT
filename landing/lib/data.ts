@@ -54,4 +54,7 @@ export function attempts(): AttemptView[] {
   });
 }
 
+export interface ScriptedRow { id: string; outcome: string; fundsMovedWithoutCosign: boolean; byDesign: boolean; matchesExpect: boolean; paidTo: string | null }
+export const scriptedRedteam = (): ScriptedRow[] => json("bench", "results", "redteam-scripted.json").rows;
+
 export const policyCaseCount = (): number => json("bench", "policy-cases.json").cases.length;

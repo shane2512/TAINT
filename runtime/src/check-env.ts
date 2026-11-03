@@ -123,7 +123,7 @@ export async function checkEnv(env: Record<string, string | undefined>, rpc: Rpc
   return out;
 }
 
-export function jsonRpc(url = "https://rpc.testnet.near.org"): Rpc {
+export function jsonRpc(url = "https://test.rpc.fastnear.com"): Rpc {
   return async (method, params) => {
     const res = await fetch(url, {
       method: "POST",

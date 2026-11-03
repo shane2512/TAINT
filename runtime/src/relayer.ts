@@ -55,7 +55,7 @@ export interface RelayerOptions {
   rpcUrl?: string;
 }
 
-const RPC = { testnet: "https://rpc.testnet.near.org", mainnet: "https://rpc.mainnet.near.org" } as const;
+const RPC = { testnet: "https://test.rpc.fastnear.com", mainnet: "https://free.rpc.fastnear.com" } as const;
 
 /**
  * What a relayed co-sign really did. A transaction can land and every receipt can succeed while the contract still

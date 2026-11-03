@@ -17,7 +17,7 @@ interface WalletLike {
 }
 
 const GAS = 100_000_000_000_000n; // 100 Tgas
-const rpcFor = (network: string) => process.env.NEXT_PUBLIC_NEAR_RPC ?? (network === "mainnet" ? "https://rpc.mainnet.near.org" : "https://rpc.testnet.near.org");
+const rpcFor = (network: string) => process.env.NEXT_PUBLIC_NEAR_RPC ?? (network === "mainnet" ? "https://free.rpc.fastnear.com" : "https://test.rpc.fastnear.com");
 const explorer = (network: string, hash: string) => `https://${network === "mainnet" ? "" : network + "."}nearblocks.io/txns/${hash}`;
 
 async function realWallet(info: Info): Promise<WalletLike> {

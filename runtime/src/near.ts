@@ -25,7 +25,7 @@ export class MockContractClient implements ContractClient {
   }
 }
 
-const RPC = { testnet: "https://rpc.testnet.near.org", mainnet: "https://rpc.mainnet.near.org" } as const;
+const RPC = { testnet: "https://test.rpc.fastnear.com", mainnet: "https://free.rpc.fastnear.com" } as const;
 const GAS = 100_000_000_000_000n; // 100 Tgas
 
 const mapPending = (rows: [number, any][]): PendingProposal[] =>
