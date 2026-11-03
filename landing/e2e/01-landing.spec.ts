@@ -119,16 +119,14 @@ test.describe("landing page", () => {
     for (const gone of [/kraken/i, /suctra/i, /schedule a demo/i, /12,486/, /\$149/, /\$299/, /99\.99%/, /\bunlimited\b/i, /pub crawl/i, /testimonial/i]) expect(text).not.toMatch(gone);
   });
 
-  test("[F76] the two modes lead to the demo and to the wallet page", async ({ page }) => {
+  test("[F76] the two modes lead to the live demo and to the repository", async ({ page }) => {
     await page.locator("#modes").scrollIntoViewIfNeeded();
-    await expect(page.getByTestId("mode-sim")).toContainText("SIMULATED");
-    await expect(page.getByTestId("mode-testnet")).toContainText("5 NEAR daily cap");
-    await expect(page.getByTestId("mode-testnet")).toContainText("Your wallet signs, no key on this site");
-    await page.getByTestId("mode-testnet").getByRole("link", { name: /Approve with your wallet/ }).click();
-    await expect(page).toHaveURL(/\/cosign$/);
-    await page.goto("/");
-    await page.getByTestId("mode-sim").scrollIntoViewIfNeeded();
-    await page.getByTestId("mode-sim").getByRole("link", { name: /Try the demo/ }).click();
+    await expect(page.getByTestId("mode-testnet")).toContainText("TESTNET");
+    await expect(page.getByTestId("mode-testnet")).toContainText("Your wallet signs every run and every approval");
+    await expect(page.getByTestId("mode-offline")).toContainText("OFFLINE");
+    await expect(page.getByTestId("mode-offline").getByRole("link", { name: /Get the repository/ })).toHaveAttribute("href", /github\.com\/shane2512\/TAINT/);
+    await page.getByTestId("mode-testnet").scrollIntoViewIfNeeded();
+    await page.getByTestId("mode-testnet").getByRole("link", { name: /Connect and try it/ }).click();
     await expect(page).toHaveURL(/\/demo$/);
   });
 
@@ -160,6 +158,6 @@ test.describe("reduced motion", () => {
     await expect(page.locator("html")).not.toHaveClass(/lenis-smooth/);
     await expect(page.getByTestId("dash-hero").locator(".bignum span")).toHaveText("1.500");
     await page.locator("#modes").scrollIntoViewIfNeeded();
-    await expect(page.getByTestId("mode-sim")).toBeVisible();
+    await expect(page.getByTestId("mode-testnet")).toBeVisible();
   });
 });
