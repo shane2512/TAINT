@@ -93,14 +93,14 @@ F1 Bankr-style Morse tweet asks for 1.5 NEAR to an attacker. F2 lookalike accoun
 | Piece | State |
 |---|---|
 | Quarantined runtime, strict parsers, grounding, role-ambiguity demotion | Built, unit-tested |
-| Policy contract `taint-myname.testnet` | Built, reviewed, **deployed to testnet**, hardened (owner `remove_worker`, `set_paused`, `withdraw`, `set_config`, `upgrade`/`migrate`, `on_payment` callback, storage-reserve-aware balance, spent list max 1000). **The contract account has no access keys** (deleted 2026-11-02). Only the owner account can change it, by calling `upgrade`. Rust: 90 unit tests plus the shared 24-case table |
+| Policy contract `taint-myname.testnet` | Built, reviewed, **deployed to testnet**. **Multi-tenant since 2026-11-03:** `Taint` (hub) holds `admin`, `LookupMap<AccountId, Tenant>`; each `Tenant` is the old single-owner state plus `balance`. Owner methods act on the caller's own tenant (`create_account(workers)` payable min 1 NEAR, `deposit`, `withdraw`, `register_worker`, `remove_worker`, `set_paused`, `set_config`, `remember`, `forget`, `pin_account`, `unpin_account`, `cosign`); `propose(owner, action, prov, flow_hash)` by an authorised worker; views take `owner`. Each tenant pays for its own storage (debited from its balance after every call). Admin: `upgrade`, attestation approvals, `set_default_config`, `withdraw_float` (NEAR not owned by any tenant). `migrate` turns the old single-owner layout (`V2`) into the first tenant and is idempotent. **No access keys on the contract account.** Rust: 100 unit tests plus the shared 24-case table |
 | TEE attestation, contract side | Built, unit-tested, **deployed to testnet but switched off** (nothing approved, `require_tee` false). Uses the `shade-attestation 0.2.0` crate. Pinned `near-sdk =5.26.1` because the crate conflicts with newer `serde_with`. A genuine Intel TDX quote being accepted is **untested** (needs a real TEE) |
 | TEE attestation, worker side | **Not done. Stubbed.** Every command prints `ATTESTATION STUBBED` |
 | NEP-366 relayed co-sign | Built and run on testnet (`npm run cosign-demo`; replay rejected with `DelegateActionInvalidNonce`) |
 | `cosign-web` | Chain-backed co-sign page using a demo owner key held by the local server (not a wallet). Refuses mainnet |
 | Wallet-signed co-sign (MyNearWallet via Wallet Selector) | Built; tested with a fake wallet; real modal opens. **Never completed by a person with the real owner wallet** |
 | Site | Built, deployed, 12 Playwright e2e specs mapped in docs/E2E-MAP.md |
-| Public demo | Live, **simulated payments only**, per-visitor isolation (cookie `taint_sid`), free-text attacks disabled |
+| Public site | **Live path, no simulated wallet (2026-11-03).** Render env: `LIVE_CHAIN=1`, `TAINT_CONTRACT`, `WORKER_ACCOUNT`, `WORKER_PRIVATE_KEY` (a function-call access key on `worker-myname.testnet` limited to `propose` on the contract, allowance 3 NEAR, NOT the worker's full key), `NEAR_AI_API_KEY` + `NEAR_AI_MAX_PER_HOUR=20`, Groq `LLM_*` + `LLM_MAX_PER_HOUR=120`, `RUNS_PER_OWNER_HOUR=6`, `RUNS_PER_IP_HOUR=12`, `RUNS_PER_DAY=200`. Flow: `/live/prepare` (server issues the message to sign) -> wallet signs with NEP-413 -> `/live/run` verifies signature + full-access key + nonce, then the worker proposes for that owner. Code: `runtime/src/live.ts`, `nep413.ts`, `landing/components/LiveWallet.tsx`, `LivePages.tsx`. The old per-visitor simulated mode (`PUBLIC_DEMO=1`, `MOCK=1`) still exists for offline/local use and tests only |
 | Live model | `openai/gpt-oss-120b` on Groq. LLM_* in `.env` still point at Groq |
 | NEAR AI Cloud | Account and key exist (stored in `.env` as `NEAR_CLOUD_AI`) but **no credits**, so chat returns HTTP 402. Attestation reports fetch fine without credits. Not yet integrated |
 | Mainnet, NEAR Intents payout | **Not started. Do not start without the owner's explicit go-ahead** |
@@ -164,7 +164,7 @@ Every command prints a banner first: `[taint] network=... mode=MOCK|LIVE ATTESTA
 - `new` must run in the same batch as the deploy (it requires predecessor == contract account).
 
 ### Public demo deployment
-Vercel project `taint-site` (Next.js in `landing/`, env `RUNTIME_URL`, `PROXY_KEY`) proxies `/api/*` to the Render service `taint-demo-api` (env `PUBLIC_DEMO=1 MOCK=1 TRUST_PROXY=1 PROXY_KEY`). The API refuses requests without the proxy key (except `GET /meta`). Render free plan sleeps; the site shows "waking up" and retries.
+Vercel project `taint-site` (Next.js in `landing/`, env `RUNTIME_URL`, `PROXY_KEY`; auto-deploys from `main`; the production alias https://taint-site.vercel.app works, `taint.shinc.tech` is blocked by some web filters as a newly registered domain) proxies `/api/*` to the Render service `taint-demo-api` (live env above). The Render env is changed through the REST API (the CLI has no env command), then `render deploys create`. Public RPC `rpc.testnet.near.org` is deprecated and rate limits: everything uses `https://test.rpc.fastnear.com`. The API refuses requests without the proxy key (except `GET /meta`). Render free plan sleeps; the site shows "waking up" and retries.
 
 ## 8. Tooling gotchas (these cost hours)
 - **Git Bash rewrites leading `/` arguments** into `C:/Program Files/Git/...` (this broke the Render health-check path). Use PowerShell or `MSYS_NO_PATHCONV=1`.
@@ -179,6 +179,13 @@ Vercel project `taint-site` (Next.js in `landing/`, env `RUNTIME_URL`, `PROXY_KE
 ## 9. Pending work, in priority order
 
 Deadline: **14 Nov 2026 23:59 UTC**. Today is 3 Nov. Items marked (YOU) need the owner personally (accounts, money, wallets, publishing).
+
+### 0. Done 2026-11-03 (live site, no simulated wallet) and what is still open from it
+Built and deployed: multi-tenant contract (upgraded on testnet), NEP-413 signed runs, per-owner client, model router (NEAR AI first, rate limited, Groq fallback), wallet pages, live browser tests (4 passing on the real contract and a real model).
+- **(YOU) Sign in once with a real MyNearWallet account** on https://taint-site.vercel.app: open an account, authorise the agent, run F1, approve. Real wallet popups (`signMessage`, `signAndSendTransaction`) were not driven by me; tests use a Node-side signer as the wallet. If MyNearWallet's `signMessage` returns a different shape, fix `realWallet()` in `landing/components/LiveWallet.tsx`.
+- Watch NEAR AI credits (about 10 at hand-over). The cap is 20 calls/hour (roughly $0.006/hour worst case); Groq takes over when NEAR AI returns 402/401/403 (it is then skipped for 10 minutes).
+- Naive and Allowlist columns are comparison agents; their payments are never sent. The live site shows no hand-authored replay (only measured runs and the saved scripted-adversary red team, `bench/results/redteam-scripted.json`, kept in step by a test).
+- The e2e account `relayer-myname.testnet` has a tenant in the contract; `landing/e2e/live/live-site.spec.ts` uses it as the visitor (`npm run test:e2e:live` style: `node e2e/run.mjs -c playwright.live.config.ts --project=livesite`, from `landing/`). It uses Groq only and no NEAR AI credits.
 
 ### A. Must do for submission (PRD section 16)
 1. **(YOU) Make the GitHub repo public**; confirm MIT LICENSE; replace the placeholder copyright holder "TAINT contributors" if wanted.

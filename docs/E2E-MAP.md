@@ -136,3 +136,14 @@ A stub NEAR RPC stands in for testnet, and a fake wallet for the real one (the t
 - **Mainnet and wallet signing.** Neither exists.
 - **The contract's owner calls** (`set_paused`, `remove_worker`, `withdraw`, `set_config`): tested in Rust, with no UI (`npm run test:contract`).
 - **The CLI scripts** (`cosign-demo`, `gen-recordings`, `check:env`, `setup:env`): no browser surface; covered by Vitest or their own output.
+
+## Live site (opt-in, real testnet contract and a real model)
+
+Run from `landing/`: `node e2e/run.mjs -c playwright.live.config.ts --project=livesite`. The wallet is a Node-side signer holding the relayer testnet key; everything else is real. File: `e2e/live/live-site.spec.ts`.
+
+| ID | What it proves |
+|---|---|
+| L1 | A visitor connects, opens an account (if needed), authorises the agent, runs F1 on a real model; the attack is held (or declined), never executed |
+| L1b | A held payment on the real contract is approved with the visitor's wallet, pays out, and leaves the held list |
+| L2 | The account page shows the contract balance and the owner pauses and resumes with their own wallet |
+| L3 | Without a wallet nothing runs; the old simulated routes are gone |
