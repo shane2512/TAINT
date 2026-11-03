@@ -16,7 +16,8 @@
     "test:contract": "cargo test --workspace --manifest-path contract/Cargo.toml",
     "check:env": "tsx runtime/src/check-env.ts",
     "setup:env": "tsx runtime/src/setup-env.ts",
-    "propose-testnet": "tsx bench/propose-testnet.ts"
+    "propose-testnet": "tsx bench/propose-testnet.ts",
+    "near-ai-check": "tsx --env-file=.env bench/near-ai-check.ts"
   },
   "dependencies": {
     "@near-js/accounts": "^2.5.1",
@@ -24,6 +25,8 @@
     "@near-js/providers": "^2.5.1",
     "@near-js/signers": "^2.5.1",
     "@near-js/transactions": "^2.5.1",
+    "@noble/curves": "1.8.1",
+    "@noble/hashes": "1.8.0",
     "borsh": "^1.0.0",
     "bs58": "^6.0.0",
     "openai": "^7.45.1"
