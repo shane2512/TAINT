@@ -41,6 +41,14 @@ fn setup() -> Taint {
         global_cap_24h: U128(5 * NEAR),
     };
     let mut c = Taint::new(acct("owner.near"), acct("dex.near"), cfg);
+    testing_env!(VMContextBuilder::new()
+        .current_account_id(acct("taint.near"))
+        .predecessor_account_id(acct("owner.near"))
+        .block_timestamp(T0)
+        .attached_deposit(NearToken::from_yoctonear(500 * NEAR))
+        .account_balance(NearToken::from_yoctonear(1000 * NEAR))
+        .build());
+    c.create_account(vec![]);
     ctx(&acct("owner.near"), T0, 0);
     c.register_worker(acct("plain.near"));
     c
@@ -88,7 +96,7 @@ fn can_propose(c: &mut Taint, who: &AccountId, now_ns: u64, flow: &str) -> bool 
     let owner = Provenance { class: TrustClass::Owner, source: "owner".into() };
     let a = ProposedAction { kind: ActionKind::Transfer, recipient: Some(acct("alice.near")), token: None, amount: U128(NEAR / 10) };
     let p = ArgProvenance { recipient: Some(owner.clone()), token: None, amount: owner };
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.propose(a, p, flow.into()))).is_ok()
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.propose(acct("owner.near"), a, p, flow.into()))).is_ok()
 }
 
 use crate::types::{ActionKind, ArgProvenance, Provenance, TrustClass};
@@ -257,7 +265,7 @@ fn a_plain_worker_key_works_until_the_owner_requires_a_tee() {
     ctx(&acct("owner.near"), T0, 0);
     c.set_require_tee(true);
     assert!(!can_propose(&mut c, &plain, T0, "f2"), "once a TEE is required the plain key must stop working");
-    assert!(!c.is_worker(plain.clone()));
+    assert!(!c.is_worker(acct("owner.near"), plain.clone()));
     ctx(&acct("owner.near"), T0, 0);
     c.set_require_tee(false);
     assert!(can_propose(&mut c, &plain, T0, "f3"));
@@ -272,7 +280,7 @@ fn an_attested_worker_still_works_when_a_tee_is_required() {
     ctx(&acct("owner.near"), T0, 0);
     c.set_require_tee(true);
     assert!(can_propose(&mut c, &who, T0, "f1"));
-    assert!(c.is_worker(who));
+    assert!(c.is_worker(acct("owner.near"), who));
 }
 
 #[test]
@@ -292,7 +300,7 @@ fn the_attestation_view_shows_what_is_approved_and_who_is_valid() {
 }
 
 #[test]
-fn every_attestation_setting_is_the_owners_alone() {
+fn every_attestation_setting_is_the_admins_alone() {
     let mut c = setup();
     let stranger = acct("stranger.near");
     let calls: Vec<(&str, Box<dyn Fn(&mut Taint)>)> = vec![
@@ -308,6 +316,6 @@ fn every_attestation_setting_is_the_owners_alone() {
         ctx(&stranger, T0, 0);
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(&mut c)));
         let msg = format!("{:?}", r.expect_err(name).downcast_ref::<String>());
-        assert!(msg.contains("owner only"), "{name}: {msg}");
+        assert!(msg.contains("admin only"), "{name}: {msg}");
     }
 }

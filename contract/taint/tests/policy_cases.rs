@@ -30,6 +30,7 @@ fn ctx(predecessor: &str, now_ns: u64) {
         .predecessor_account_id(acct(predecessor))
         .block_timestamp(now_ns)
         .account_balance(NearToken::from_near(1_000_000_000))
+        .attached_deposit(NearToken::from_near(500_000_000))
         .build());
 }
 
@@ -71,6 +72,7 @@ fn run_case(table: &Value, case: &Value) {
     ctx("taint.near", now); // init must come from the contract account itself
     let mut contract = Taint::new(acct("owner.near"), acct("dex.near"), cfg);
     ctx("owner.near", now);
+    contract.create_account(vec![]);
     contract.register_worker(acct("worker.near"));
 
     let mut created: HashMap<String, (u64, String)> = HashMap::new();
@@ -95,7 +97,7 @@ fn run_case(table: &Value, case: &Value) {
             }
             "registerPayee" => {
                 ctx(s["by"].as_str().unwrap(), now);
-                contract.register_payee_address(acct(s["address"].as_str().unwrap()));
+                contract.register_payee_address(acct("owner.near"), acct(s["address"].as_str().unwrap()));
             }
             "propose" => {
                 let a = &s["action"];
@@ -129,7 +131,7 @@ fn run_case(table: &Value, case: &Value) {
                     format!("flow:{id}:{n}")
                 });
                 ctx("worker.near", now);
-                let out = contract.propose(action, ap, flow);
+                let out = contract.propose(acct("owner.near"), action, ap, flow);
                 check(&out, expect, &id);
                 if let ProposalOutcome::Pending { proposal_id, proposal_hash, .. } = &out {
                     created.insert(id, (*proposal_id, proposal_hash.clone()));
