@@ -87,10 +87,10 @@ async function realWallet(info: LiveInfo): Promise<WalletLike> {
     signMessage: async (message, recipient) => {
       const wallet = await selector.wallet();
       if (!wallet.signMessage) throw new Error("this wallet cannot sign messages");
-      const nonce = crypto.getRandomValues(new Uint8Array(32));
-      const out = await wallet.signMessage({ message, recipient, nonce: nonce as unknown as Buffer });
+      const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(32))); // the wallet library insists on a Buffer
+      const out = await wallet.signMessage({ message, recipient, nonce });
       if (!out) throw new Error("the wallet returned no signature");
-      return { accountId: out.accountId, publicKey: out.publicKey.includes(":") ? out.publicKey : `ed25519:${out.publicKey}`, signature: out.signature, message, nonce: b64(nonce), recipient };
+      return { accountId: out.accountId, publicKey: out.publicKey.includes(":") ? out.publicKey : `ed25519:${out.publicKey}`, signature: out.signature, message, nonce: b64(new Uint8Array(nonce)), recipient };
     },
     call: async (method, args, deposit) =>
       (await selector.wallet()).signAndSendTransaction({ receiverId: info.contractId, actions: [actionCreators.functionCall(method, args, GAS, deposit)] }),
