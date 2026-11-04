@@ -4,7 +4,7 @@
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60; // a live run does a real model call and a chain transaction: longer than the 25 s a read gets
 
 async function forward(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }): Promise<Response> {
   const { path } = await ctx.params;
@@ -17,8 +17,9 @@ async function forward(req: NextRequest, ctx: { params: Promise<{ path: string[]
   if (process.env.PROXY_KEY) headers["x-proxy-key"] = process.env.PROXY_KEY;
   let res: Response;
   try {
-    res = await fetch(`${base}/${path.join("/")}${req.nextUrl.search}`, { method: req.method, headers, body: req.method === "POST" ? await req.text() : undefined, cache: "no-store", signal: AbortSignal.timeout(25_000) });
-  } catch {
+    res = await fetch(`${base}/${path.join("/")}${req.nextUrl.search}`, { method: req.method, headers, body: req.method === "POST" ? await req.text() : undefined, cache: "no-store", signal: AbortSignal.timeout(path.join("/") === "live/run" ? 58_000 : 25_000) });
+  } catch (e) {
+    if (path.join("/") === "live/run" && (e as Error).name === "TimeoutError") return Response.json({ error: "The run took too long to answer. It may still have reached the chain: look at the Cosign page, then try again." }, { status: 504 });
     // A hosted runtime on a free plan sleeps when idle and takes about a minute to wake; a local one is simply not started.
     const local = /^https?:\/\/(127\.0\.0\.1|localhost)[:/]/.test(base);
     return Response.json(local
