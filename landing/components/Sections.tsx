@@ -58,7 +58,7 @@ export function Hero() {
           <div className="hero-side" data-reveal="0.15">
             <p>Allowlists check where money goes. TAINT checks who decided. Values an AI agent read in outside text wait for your co-sign, on NEAR testnet.</p>
             <div className="hero-btns">
-              <Link className="btn solid" href="/demo">Try the demo <Icon name="right" size={12} /></Link>
+              <Link className="btn solid" href="/wallet">Try the demo <Icon name="right" size={12} /></Link>
               <a className="btn ghost" href={REPO} target="_blank" rel="noreferrer">View the code</a>
             </div>
           </div>
@@ -217,7 +217,7 @@ export function Modes() {
               <li><Icon name="right" size={12} />Your wallet signs every run and every approval</li>
               <li><Icon name="right" size={12} />Pause, revoke and withdraw for the owner</li>
             </ul>
-            <Link className="btn solid" href="/demo">Connect and try it <Icon name="right" size={12} /></Link>
+            <Link className="btn solid" href="/wallet">Connect and try it <Icon name="right" size={12} /></Link>
           </article>
           <article className="plan hot" data-testid="mode-offline">
             <div className="plan-bg" aria-hidden />

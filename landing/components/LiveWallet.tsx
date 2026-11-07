@@ -4,7 +4,8 @@
 import "@near-wallet-selector/modal-ui/styles.css";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { outcomeOf, type Outcome } from "../lib/outcome";
-import { api, useApi } from "./ui";
+import Link from "next/link";
+import { api, Icon, useApi } from "./ui";
 
 export interface LiveInfo {
   network: "testnet" | "mainnet";
@@ -40,6 +41,7 @@ export interface AccountState {
   workerAuthorised: boolean;
   workers: string[];
   globalCapNear: string | null;
+  config: Record<string, string> | null;
   spent24hNear: string;
   held: Held[];
   book: { address: string; capNear: string; expiresAt: number; learnedFrom: string }[];
@@ -199,6 +201,22 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
   }), [info, infoError, account, ready, state, stateError, reload, returned]);
 
   return <WalletCtx.Provider value={value}>{children}</WalletCtx.Provider>;
+}
+
+/** How much the visitor holds in the contract, as a number, or null when not known yet. */
+export const heldBalance = (s: AccountState | null | undefined) => (s?.balanceNear ? Number(s.balanceNear) : null);
+/** True when a contract or wallet refusal says there was not enough money. */
+export const isInsufficient = (why: string) => /insufficient|not enough|lack/i.test(why);
+/** Sends the visitor to the Wallet page when their balance in the contract cannot cover what they are about to do. */
+export function FundsNotice({ need, what }: { need: number; what: string }) {
+  const live = useLive();
+  const b = heldBalance(live?.state);
+  if (b === null || b >= need) return null;
+  return (
+    <p className="callout" role="status" data-testid="low-funds">
+      Your wallet in the contract holds {b} NEAR, and {what} needs {need}. <Link href="/wallet">Deposit on the Wallet page <Icon name="ne" size={10} /></Link>
+    </p>
+  );
 }
 
 /** The account bar every live page starts with: connect, open an account, authorise the agent. */

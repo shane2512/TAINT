@@ -7,9 +7,9 @@ import { Footer } from "./Sections";
 import { LiveProvider, useLive } from "./LiveWallet";
 
 const NAV = [
+  ["Wallet", "/wallet"],
   ["Rob the Pet", "/demo"],
   ["Co-sign", "/cosign"],
-  ["Wallet", "/wallet"],
   ["Policy", "/policy"],
   ["Red team", "/redteam"],
   ["Results", "/results"],

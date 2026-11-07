@@ -29,7 +29,7 @@ export function Nav() {
       </nav>
       <div className="nav-cta">
         <a className="btn ghost" href={REPO} target="_blank" rel="noreferrer"><Icon name="github" size={14} /> GitHub</a>
-        <Link className="btn solid" href="/demo">Try the demo <Icon name="right" size={12} /></Link>
+        <Link className="btn solid" href="/wallet">Try the demo <Icon name="right" size={12} /></Link>
       </div>
     </header>
   );

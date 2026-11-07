@@ -18,6 +18,7 @@
     "check:env": "tsx runtime/src/check-env.ts",
     "setup:env": "tsx runtime/src/setup-env.ts",
     "propose-testnet": "tsx bench/propose-testnet.ts",
+    "near-ai-signed": "tsx --env-file=.env bench/near-ai-signed.ts",
     "near-ai-check": "tsx --env-file=.env bench/near-ai-check.ts"
   },
   "dependencies": {

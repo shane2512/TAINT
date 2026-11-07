@@ -108,6 +108,7 @@ export function createLive(o: LiveOptions, clientId: (req: http.IncomingMessage)
       workerAuthorised: account?.workers.includes(o.workerAccount) ?? false,
       workers: account?.workers ?? [],
       globalCapNear: account ? formatNear(account.config.global_cap_24h) : null,
+      config: account?.config ?? null,
       spent24hNear: formatNear(spent),
       held: held.map((p) => describePending(p, book.map((b) => b.address))),
       book: book.map(near),

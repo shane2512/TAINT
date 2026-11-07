@@ -2,9 +2,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Halftone } from "./Halftone";
-import { AccountGate, explorer, useLive, type Held } from "./LiveWallet";
+import { AccountGate, explorer, FundsNotice, heldBalance, isInsufficient, useLive, type Held } from "./LiveWallet";
 import { api, ErrorNote, Icon, Outcome, OUTCOME, PageHead } from "./ui";
 import type { Outcome as TxOutcome } from "../lib/outcome";
+
+/** The attack presets try to move up to this much. */
+const ATTACK_NEAR = 1.5;
 
 const PETS = [
   { id: "naive", name: "Naive Pet", sub: "A prompt and a 2 NEAR daily cap. Its payment is never sent." },
@@ -41,12 +44,16 @@ export function LiveDemo() {
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
+  const [low, setLow] = useState(false);
   const [log, setLog] = useState<LogRow[]>([]);
   const info = live?.info;
   const preset = info?.presets.find((p) => p.id === selected);
 
   async function send(body: object, what: string) {
     if (!live?.account) return;
+    const have = heldBalance(live.state);
+    if (have !== null && have < ATTACK_NEAR) { setError(`Your wallet in the contract holds ${have} NEAR and the attacks move up to ${ATTACK_NEAR}. Deposit on the Wallet page first.`); setLow(true); return; }
+    setLow(false);
     setBusy(true); setError(null); setResults(null); setTx(null); setStep("Preparing the request");
     try {
       const prep = await api<{ id: string; message: string }>("live/prepare", { owner: live.account, ...body });
@@ -78,9 +85,10 @@ export function LiveDemo() {
   return (
     <div>
       <PageHead title="Rob the Pet.">
-        Connect your wallet, open an account, and send the same message to three agents. TAINT proposes on the real contract for your account; the two comparison agents never send anything.
+        Your wallet comes first: connect it and deposit on the Wallet page. Then send the same message to three agents. TAINT proposes on the real contract for your account; the two comparison agents never send anything.
       </PageHead>
       <AccountGate>
+        <FundsNotice need={ATTACK_NEAR} what="running an attack" />
         <section aria-label="Choose an attack">
           <ul className="presets" data-testid="presets">
             {info?.presets.map((p) => (
@@ -107,7 +115,7 @@ export function LiveDemo() {
             </div>
             <p className="hint">A real model reads it. Runs are limited to {info?.limits.perOwnerPerHour} per hour per account and {info?.limits.perDay} a day for the whole site.</p>
           </form>
-          {error && <ErrorNote>{error}</ErrorNote>}
+          {error && <ErrorNote>{error}{(low || isInsufficient(error)) && <> <Link href="/wallet" data-testid="to-wallet">Go to the Wallet page <Icon name="ne" size={10} /></Link></>}</ErrorNote>}
           {busy && <p className="hint" role="status" data-testid="step">{step}...</p>}
         </section>
 
@@ -153,6 +161,8 @@ function Card({ item, network, onDone }: { item: Held; network: string; onDone: 
     setBusy(false);
   }
   const finished = done?.ok === true;
+  const have = heldBalance(live.state);
+  const short = have !== null && have < Number(item.amountNear);
   return (
     <article className={`hold-card ${finished ? "finished" : ""}`} data-testid={`chain-proposal-${item.proposalId}`}>
       <h2>{a.kind === "Transfer" ? `Send ${item.amountNear} NEAR to ${a.recipient}` : `Swap ${item.amountNear} NEAR into ${a.token}`}</h2>
@@ -161,13 +171,14 @@ function Card({ item, network, onDone }: { item: Held; network: string; onDone: 
         {item.diff && <><dt>LOOKALIKE CHECK</dt><dd className="warn" data-testid="lookalike">{item.diff}</dd></>}
       </dl>
       <div className="actions">
-        <button className="btn primary" disabled={busy || finished} onClick={() => approve(false)}>Approve once</button>
-        {a.recipient && <button className="btn ghost" disabled={busy || finished} onClick={() => approve(true)}>Approve and remember (cap 1 NEAR, 30 days)</button>}
+        <button className="btn primary" disabled={busy || finished || short} onClick={() => approve(false)}>Approve once</button>
+        {a.recipient && <button className="btn ghost" disabled={busy || finished || short} onClick={() => approve(true)}>Approve and remember (cap 1 NEAR, 30 days)</button>}
       </div>
+      {short && !finished && <p className="error" role="alert" data-testid="short-funds">Your wallet in the contract holds {have} NEAR, and this payment is {item.amountNear}. <Link href="/wallet">Deposit on the Wallet page first <Icon name="ne" size={10} /></Link></p>}
       {busy && <p className="hint" role="status">Waiting for your wallet...</p>}
       {done && (done.ok
         ? <p className="okay" role="status" data-testid="chain-approved"><Icon name="check" /> Approved on chain. {done.txHash && <a href={explorer(network, done.txHash)} target="_blank" rel="noreferrer" data-testid="chain-explorer">View the transaction <Icon name="ne" size={10} /></a>}</p>
-        : <ErrorNote>{done.why}</ErrorNote>)}
+        : <ErrorNote>{done.why}{isInsufficient(done.why) && <> <Link href="/wallet">Deposit on the Wallet page <Icon name="ne" size={10} /></Link></>}</ErrorNote>)}
     </article>
   );
 }
@@ -201,6 +212,7 @@ export function LiveAccount() {
   const [cap, setCap] = useState("");
   const [pin, setPin] = useState("");
   const [amount, setAmount] = useState("");
+  const [dailyCap, setDailyCap] = useState("");
   const [note, setNote] = useState<TxOutcome | null>(null);
   const [busy, setBusy] = useState(false);
   const s = live?.state;
@@ -219,11 +231,14 @@ export function LiveAccount() {
   return (
     <div>
       <PageHead title="Your account.">
-        Everything here is read from the contract and changed by your own wallet. A recipient in your address book, or registered by an account you pinned, can be paid inside its cap. Everything else waits for your co-sign.
+        Start here: connect your wallet and deposit. Everything here is read from the contract and changed by your own wallet. A recipient in your address book, or registered by an account you pinned, can be paid inside its cap. Everything else waits for your co-sign.
       </PageHead>
       <AccountGate>
         {s && (
           <>
+            {(heldBalance(s) ?? 0) >= ATTACK_NEAR
+              ? <p className="callout" data-testid="next-step">Funded. Next, <Link href="/demo">run an attack on Rob the Pet <Icon name="right" size={10} /></Link></p>
+              : <p className="callout" role="status" data-testid="deposit-first">Step 2: deposit at least 2 NEAR below, then <Link href="/demo">move on to Rob the Pet <Icon name="right" size={10} /></Link></p>}
             <section className="meter" aria-label="Balance and daily spend" data-testid="meter">
               <p className="gl">BALANCE IN THE CONTRACT</p>
               <p className="big"><span data-testid="balance">{s.balanceNear}</span><small> NEAR{s.paused ? " | PAUSED" : ""}</small></p>
@@ -244,6 +259,10 @@ export function LiveAccount() {
                 <div className="actions">
                   <button className="btn ghost small" disabled={busy} onClick={() => call("set_paused", { paused: !s.paused })} data-testid="pause">{s.paused ? "Resume the agent" : "Pause everything"}</button>
                 </div>
+                <form className="inline" onSubmit={async (e) => { e.preventDefault(); const y = yocto(dailyCap); if (y && s.config) await call("set_config", { config: { ...s.config, global_cap_24h: y } }); }}>
+                  <label><span className="gl">DAILY CAP, NEAR</span><input className="txt" value={dailyCap} onChange={(e) => setDailyCap(e.target.value)} placeholder={s.globalCapNear ?? "2"} inputMode="decimal" data-testid="cap-amount" /></label>
+                  <button className="btn ghost small" disabled={busy || !yocto(dailyCap) || !s.config} data-testid="set-cap">Set daily cap</button>
+                </form>
               </section>
               <section className="block" aria-label="Your agents">
                 <h2 className="h-sm">Your agents</h2>

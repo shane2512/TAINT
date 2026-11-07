@@ -29,7 +29,7 @@ test.describe("landing page", () => {
     }
     await expect(page.getByTestId("nav").getByRole("link", { name: "GitHub" })).toHaveAttribute("href", "https://github.com/shane2512/TAINT");
     await page.getByTestId("nav").getByRole("link", { name: "Try the demo" }).click();
-    await expect(page).toHaveURL(/\/demo$/);
+    await expect(page).toHaveURL(/\/wallet$/);
   });
 
   test("[F03] the product window in the hero counts its number up and says it is sample data", async ({ page }) => {
@@ -127,7 +127,7 @@ test.describe("landing page", () => {
     await expect(page.getByTestId("mode-offline").getByRole("link", { name: /Get the repository/ })).toHaveAttribute("href", /github\.com\/shane2512\/TAINT/);
     await page.getByTestId("mode-testnet").scrollIntoViewIfNeeded();
     await page.getByTestId("mode-testnet").getByRole("link", { name: /Connect and try it/ }).click();
-    await expect(page).toHaveURL(/\/demo$/);
+    await expect(page).toHaveURL(/\/wallet$/);
   });
 
   test("[F77] the handle codes beside the widget keep changing", async ({ page }) => {
