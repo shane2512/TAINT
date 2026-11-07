@@ -1,0 +1,47 @@
+◆  Capturing 15 frames at [5s, 9s, 16s, 22s, 30s, 45s, 52s, 70s, 80s, 95s, 100s, 115s, 125s, 138s, 146s] from video
+[INFO] [Compiler] Fetched 11 font face(s) for "Inter" from Google Fonts (cached to C:\Users\shane\.cache\hyperframes\fonts\inter)
+[INFO] [Compiler] Fetched 11 font face(s) for "Inter" from Google Fonts (cached to C:\Users\shane\.cache\hyperframes\fonts\inter)
+[INFO] [Compiler] Fetched 10 font face(s) for "JetBrains Mono" from Google Fonts (cached to C:\Users\shane\.cache\hyperframes\fonts\jetbrains-mono)
+[INFO] [Compiler] Injected deterministic @font-face rules for 3 requested font families
+[hyperframes] browserGpuMode probe → hardware (WebGL renderer vendor="Google Inc. (NVIDIA)" renderer="ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 6GB Laptop GPU (0x000025AC) Direct3D11 vs_5_0 ps_5_0, D3D11)")
+
+   Fonts: 25 loaded
+   Note: added an end-of-timeline frame at 149.75s. Short beats between your --at times may still be skipped — pass them explicitly.
+[hyperframes] snapshot: frame 1/16 at 5s
+[hyperframes] snapshot: frame 2/16 at 9s
+[hyperframes] snapshot: frame 3/16 at 16s
+[hyperframes] snapshot: frame 4/16 at 22s
+[hyperframes] snapshot: frame 5/16 at 30s
+[hyperframes] snapshot: frame 6/16 at 45s
+[hyperframes] snapshot: frame 7/16 at 52s
+[hyperframes] snapshot: frame 8/16 at 70s
+[hyperframes] snapshot: frame 9/16 at 80s
+[hyperframes] snapshot: frame 10/16 at 95s
+[hyperframes] snapshot: frame 11/16 at 100s
+[hyperframes] snapshot: frame 12/16 at 115s
+[hyperframes] snapshot: frame 13/16 at 125s
+[hyperframes] snapshot: frame 14/16 at 138s
+[hyperframes] snapshot: frame 15/16 at 146s
+[hyperframes] snapshot: frame 16/16 at 149.75s
+   Revision: 1becee30-b706-43c4-8d0c-5a13412e023e (recorded-revision)
+   State: C:\dfol\NEAR\video\.hyperframes\video-state.json
+
+◇  16 snapshots saved to C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-00-at-5s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-01-at-9s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-02-at-16s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-03-at-22s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-04-at-30s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-05-at-45s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-06-at-52s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-07-at-70s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-08-at-80s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-09-at-95s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-10-at-100s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-11-at-115s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-12-at-125s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-13-at-138s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-14-at-146s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\frame-15-at-149.75s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\contact-sheet-1.jpg (grid view for AI review)
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\173d42a6-f575-46b7-b8ed-6d98c3306a16\contact-sheet-2.jpg (grid view for AI review)

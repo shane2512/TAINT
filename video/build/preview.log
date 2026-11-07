@@ -1,0 +1,12 @@
+┌  hyperframes preview
+
+  Project   video
+  Studio    http://localhost:3002/#project/video
+  Server    http://localhost:3002
+  Desktop   Keep editing by chatting with Framey in the HyperFrames desktop app → https://hyperframes.studio/studio/download?os=windows&src=cli
+
+  Running in the background. Log: C:\Users\shane\AppData\Local\hyperframes\previews\366fba466438b847.log
+  Changes reload automatically in the studio.
+
+  Stop with: hyperframes preview "C:\\dfol\\NEAR\\video" --stop
+

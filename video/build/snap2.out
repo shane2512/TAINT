@@ -1,0 +1,30 @@
+◆  Capturing 7 frames at [110s, 117.5s, 118.5s, 125s, 127.5s, 133s, 138s] from video
+[INFO] [Compiler] Fetched 11 font face(s) for "Inter" from Google Fonts (cached to C:\Users\shane\.cache\hyperframes\fonts\inter)
+[INFO] [Compiler] Fetched 11 font face(s) for "Inter" from Google Fonts (cached to C:\Users\shane\.cache\hyperframes\fonts\inter)
+[INFO] [Compiler] Fetched 10 font face(s) for "JetBrains Mono" from Google Fonts (cached to C:\Users\shane\.cache\hyperframes\fonts\jetbrains-mono)
+[INFO] [Compiler] Injected deterministic @font-face rules for 3 requested font families
+[hyperframes] browserGpuMode probe → hardware (WebGL renderer vendor="Google Inc. (NVIDIA)" renderer="ANGLE (NVIDIA, NVIDIA GeForce RTX 3050 6GB Laptop GPU (0x000025AC) Direct3D11 vs_5_0 ps_5_0, D3D11)")
+
+   Fonts: 25 loaded
+   Note: added an end-of-timeline frame at 149.75s. Short beats between your --at times may still be skipped — pass them explicitly.
+[hyperframes] snapshot: frame 1/8 at 110s
+[hyperframes] snapshot: frame 2/8 at 117.5s
+[hyperframes] snapshot: frame 3/8 at 118.5s
+[hyperframes] snapshot: frame 4/8 at 125s
+[hyperframes] snapshot: frame 5/8 at 127.5s
+[hyperframes] snapshot: frame 6/8 at 133s
+[hyperframes] snapshot: frame 7/8 at 138s
+[hyperframes] snapshot: frame 8/8 at 149.75s
+   Revision: 694f4a66-5432-4893-9f1e-ec71e8d19981 (recorded-revision)
+   State: C:\dfol\NEAR\video\.hyperframes\video-state.json
+
+◇  8 snapshots saved to C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-00-at-110s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-01-at-117.5s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-02-at-118.5s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-03-at-125s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-04-at-127.5s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-05-at-133s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-06-at-138s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\frame-07-at-149.75s.png
+   C:\dfol\NEAR\video\.hyperframes\artifacts\snapshots\360443c8-de96-416f-871d-e7ee86930a6c\contact-sheet.jpg (grid view for AI review)

@@ -1,8 +1,37 @@
-# TAINT: provenance-gated wallets for AI agents
+<div align="center">
+
+<img src="docs/img/poster.png" alt="TAINT: allowlists check where money goes, TAINT checks who decided. Naive agent drained 20 of 20, TAINT executed 0 of 20." width="100%" />
+
+# TAINT
+
+**Provenance-gated wallets for AI agents on NEAR**
 
 > Allowlists check *where* money goes. TAINT checks *who decided*.
 
+[Live site](https://taint.shinc.tech) · [Demo video](video/renders/taint-pitch-final.mp4) · [How it works](#how-it-works) · [Tech stack](#tech-stack) · [Quick start](#try-it-offline) · [Docs](#documentation)
+
+![Network: NEAR testnet](https://img.shields.io/badge/network-NEAR%20testnet-ec4a14)
+![Contract: Rust](https://img.shields.io/badge/contract-Rust-000000)
+![Runtime: TypeScript](https://img.shields.io/badge/runtime-TypeScript-3178C6)
+![Status: partly built](https://img.shields.io/badge/status-partly%20built-d9731f)
+![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
+
+</div>
+
+## Contents
+
+- [What it is](#what-it-is) · [Status](#status-read-this-first) · [Why](#why)
+- [How it works](#how-it-works) · [User flow](#user-flow) · [Tech stack](#tech-stack)
+- [Try it (offline)](#try-it-offline)
+- [Benchmark](#benchmark-mock-hand-authored-model-outputs) · [Live-model replay](#live-model-replay-real-model-simulated-payments) · [Red team](#red-team-live-model)
+- [The contract](#the-contract-and-what-the-owner-can-do) · [What is not claimed](#what-is-not-claimed)
+- [Layout](#layout) · [Documentation](#documentation) · [Contributing and security](#contributing-and-security) · [License](#license)
+
+## What it is
+
 A TypeScript agent runtime plus a NEAR policy contract. The agent can read anything on the internet, but a value that came from text someone else wrote can only move money if you already approved it, or you approve it at that moment. Built for NEAR HACKATHON, Nov 2026.
+
+**Trust model in one paragraph.** The model is allowed to be fooled; the contract is not. Inference runs on NEAR AI Cloud (Intel TDX confidential inference, with response signatures we can check), and the policy contract on NEAR decides what moves. The component that labels where each value came from, the worker, is **not** attested: NEAR AI Cloud attests model inference, not arbitrary worker code, and we did not set up Phala/Shade. Until the worker is attested, provenance labels are only as trustworthy as the machine running it. See [decision 0003](docs/decisions/0003-near-ai-cloud-instead-of-phala.md).
 
 ## Status: read this first
 
@@ -17,9 +46,9 @@ This repository is **partly built**. The runtime, the policy rules, the benchmar
 | TEE (Shade Agent) attestation | **Not done; stubbed.** The contract side (verification with the Shade attestation crate, owner-approved measurements and hardware, expiring registrations, an option to require a TEE) is **built, unit-tested and deployed to testnet (switched off: nothing approved, `require_tee` off)**, and nothing has run in a real TEE. The worker side needs Docker and Phala and Docker Hub accounts. What real attestation needs was checked against the current docs on 2026-11-02 ([0002](docs/decisions/0002-attestation-requirements.md)): a toolchain pin, `clang`, Docker, and Phala and Docker Hub accounts; none of it has been built or run ([0001](docs/decisions/0001-attestation.md)). The spike was not run. Every command prints `ATTESTATION STUBBED` |
 | NEP-366 delegate-action co-sign, relayer | **Built and run on testnet** (`npm run cosign-demo`; replay rejected). `npm run cosign-web` runs the API against testnet with a demo owner key held by the local server (not a wallet); the default `npm run web` uses the MOCK approval. Mainnet not run |
 | Site (`landing/`, Next.js) | **Built.** Landing page plus Rob the Pet, Co-sign, Wallet, Policy, Red team and Results. Every feature maps to a browser test: [docs/E2E-MAP.md](docs/E2E-MAP.md). The look follows a reference recording; the content and numbers are ours, read from the saved run files |
-| Public site | **Live on testnet, no simulated wallet:** https://taint-site.vercel.app (also taint.shinc.tech; some corporate web filters block that newly registered domain). A visitor connects their own MyNearWallet, opens an account in the contract (deposit test NEAR), and every run is signed by their wallet (NEP-413); the worker proposes on the real contract for that account and the visitor approves held payments with their own wallet. Model: NEAR AI Cloud first (20 calls/hour cap), Groq when it is out of credits or over its cap. Limits: 6 runs/hour per account, 12/hour per IP, 200/day for the site. The Naive and Allowlist comparison agents never send anything. API on Render's free plan (sleeps; about a minute to wake). **A real MyNearWallet sign-in has not been done by a person yet**: the live browser tests (`landing/e2e/live/live-site.spec.ts`) use a Node-side signer holding a testnet key as the wallet, against the real contract and a real model |
+| Public site | **Live on testnet, no simulated wallet:** https://taint.shinc.tech. A visitor connects their own Meteor Wallet, opens an account in the contract (deposit test NEAR), and every run is signed by their wallet (NEP-413); the worker proposes on the real contract for that account and the visitor approves held payments with their own wallet. Model: NEAR AI Cloud first (20 calls/hour cap), Groq when it is out of credits or over its cap. Limits: 6 runs/hour per account, 12/hour per IP, 200/day for the site. The Naive and Allowlist comparison agents never send anything. API on Render's free plan (sleeps; about a minute to wake). **A real Meteor Wallet sign-in has not been done by a person yet**: the live browser tests (`landing/e2e/live/live-site.spec.ts`) use a Node-side signer holding a testnet key as the wallet, against the real contract and a real model |
 | Wallet-signed co-sign in the browser | **Built, tested with a fake wallet, and the real wallet modal opens against testnet.** The `/cosign` page reads held payments straight from the testnet contract (no key) and asks the owner's own wallet (MyNearWallet) to sign one `cosign` transaction. **Not yet done by a person with the real owner wallet.** `npm run propose-testnet` creates a held payment to approve |
-| NEAR AI Cloud verification (`runtime/src/near-ai-verify.ts`) | **Partly built.** Free live check works (`npm run near-ai-check`): the gateway and model attestation reports echo our nonce and their TDX quote's report data is exactly signing address + nonce. Response-signature checking (EIP-191 over model:sha256(request):sha256(response)) is unit-tested with a stand-in key. **Not checked:** Intel's signature chain on the quotes, NVIDIA GPU evidence, image measurements, and no real signed completion has been verified (needs credits). The benchmark still uses Groq `gpt-oss-120b`: `Qwen/Qwen3.6-35B-A3B-FP8` declined the F1 injection in one probe, so the Naive agent was not drained |
+| NEAR AI Cloud verification (`runtime/src/near-ai-verify.ts`) | **Partly built.** Free live check works (`npm run near-ai-check`): the gateway and model attestation reports echo our nonce and their TDX quote's report data is exactly signing address + nonce. Response-signature checking (EIP-191 over model:sha256(request):sha256(response)) is unit-tested and was **checked once on a real completion (2026-11-07, `npm run near-ai-signed`)**. **Not checked:** Intel's signature chain on the quotes, NVIDIA GPU evidence, image measurements, and only that one signed completion has been verified. The benchmark still uses Groq `gpt-oss-120b`: `Qwen/Qwen3.6-35B-A3B-FP8` declined the F1 injection in one probe, so the Naive agent was not drained |
 | NEAR Intents payout, mainnet runs | **Not done** |
 | Real-model results | **Replay measured once** with `openai/gpt-oss-120b`, 10 runs per fixture, payments simulated (see "Live-model replay" below). Live red team run once (see below) |
 | Mandates and the liquidity/age fact oracle (stretch) | **Not built** |
@@ -38,6 +67,25 @@ Transaction simulation and allowlists mostly check what a transaction does and w
 1. **Quarantined runtime.** The planner model sees only your signed instruction and *handles*: opaque references (`$h1`, kind, a coarse source label such as `x.com`) to values read from outside content. A separate extractor model turns outside content into typed handles (`Account`, `Token`, `Amount`). Values that do not parse (a Cyrillic lookalike, "max", "three NEAR") never become handles.
 2. **Proposal with provenance.** Every proposed action carries, per argument, where it came from: `Owner` (appears in your signed instruction) or `Untrusted` plus its full source. An `Owner` literal must appear as a whole token in the instruction you signed, and only if that instruction offers exactly one candidate for its role (two accounts or two amounts: the choice is demoted to untrusted and held). A planner cannot mint an `Owner` value.
 3. **Policy.** An untrusted recipient passes only if it is in your address book (within that entry's cap) or was vouched for by a named account you pinned. An untrusted token or amount is held. Everything held waits for your co-sign, which shows the source line and a lookalike check. A 24h rolling cap applies to everything that executes.
+
+## User flow
+
+<img src="docs/img/userflow.png" alt="User flow: the owner signs an instruction, the worker reads outside content in quarantine and attaches provenance, the policy contract executes, holds or refuses, and a held payment waits for the owner's co-sign." width="100%" />
+
+## Tech stack
+
+<img src="docs/img/techstack.png" alt="Tech stack by layer: Meteor Wallet and MyNearWallet; Next.js, TypeScript, GSAP and Vercel; Node.js, NEAR AI Cloud, Groq and Render; NEAR and Rust; Intel TDX, Vitest and Playwright." width="100%" />
+
+| Layer | Used for |
+|---|---|
+| NEAR Protocol + Rust | The policy contract (`contract/taint`), the testnet DEX stand-in, NEP-413 signed runs, NEP-366 delegate co-sign |
+| NEAR AI Cloud | Planner and extractor inference in Intel TDX, with response signatures we check; Groq `gpt-oss-120b` is the fallback and the benchmark model |
+| Node.js + TypeScript | The quarantined agent runtime and API (`runtime/`), hosted on Render's free plan |
+| Next.js + GSAP | The site (`landing/`), hosted on Vercel |
+| Meteor Wallet, MyNearWallet | Meteor signs runs on the live site; MyNearWallet signs the `/cosign` page |
+| Vitest, Playwright, `cargo test` | Unit tests, every page in a real browser, contract tests |
+
+Logos are trademarks of their owners and are used only to name the tools. The images are rebuilt with `node docs/assets/build.mjs`.
 
 ## Try it (offline)
 
@@ -150,8 +198,24 @@ bench/         fixtures, redteam attempts, recordings, replay.ts, redteam.ts, ge
                policy-cases.json (the rule table the Rust contract must also pass)
 baselines/     the frozen allowlist config and its README
 landing/       the site: Next.js, GSAP, Lenis; e2e/ holds the Playwright tests
-docs/superpowers/plans/  the implementation plan;  PRD.md  the product spec
+docs/           decisions/ (ADRs), E2E-MAP.md, TEE-DEPLOY.md, LIVE-DEMO-SCRIPT.md,
+               img/ (poster, tech stack, user flow) and assets/ (their source and build script)
+video/         the pitch video (HyperFrames compositions); renders/ holds the output
+PRD.md         the product spec
 ```
+
+## Documentation
+
+- [PRD.md](PRD.md): product spec
+- [docs/decisions/](docs/decisions/): why NEAR AI Cloud instead of Phala ([0003](docs/decisions/0003-near-ai-cloud-instead-of-phala.md)), attestation requirements ([0002](docs/decisions/0002-attestation-requirements.md))
+- [docs/E2E-MAP.md](docs/E2E-MAP.md): every site feature mapped to a browser test
+- [docs/TEE-DEPLOY.md](docs/TEE-DEPLOY.md): what real worker attestation needs
+- [docs/LIVE-DEMO-SCRIPT.md](docs/LIVE-DEMO-SCRIPT.md): the live demo, scene by scene
+- [bench/RESULTS.md](bench/RESULTS.md): benchmark and red team results
+
+## Contributing and security
+
+Issues and pull requests are welcome. Run `npm test` and `npm run test:contract` first, and keep every claim in this README matched to a saved result file. This is hackathon code on testnet: **do not put real funds in it**. To report a vulnerability, open a private security advisory on [the repository](https://github.com/shane2512/TAINT/security/advisories) rather than a public issue.
 
 ## License
 

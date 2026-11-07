@@ -4,7 +4,7 @@ This is the screen-recorded section of the main video. Everything on screen is r
 
 ## Before you hit record (10 minutes)
 
-1. Warm the server: open https://taint-site.vercel.app/demo and wait until the page shows the preset cards (the free host sleeps; first load takes up to a minute).
+1. Warm the server: open https://taint.shinc.tech/demo and wait until the page shows the preset cards (the free host sleeps; first load takes up to a minute).
 2. Meteor extension on **Testnet**, account `funrobe2504.testnet` selected, at least 4 NEAR in it.
 3. Decide the account state you want to film:
    - **Fresh (best)**: use a second testnet account that has not opened a contract account, so you film "open account" and "authorise agent" for real.

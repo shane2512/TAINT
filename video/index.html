@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#07080c}
+#root{position:absolute;inset:0;background:#07080c}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="145" data-width="1920" data-height="1080">
+<div id="captions" class="clip" data-composition-id="captions" data-composition-src="compositions/captions.html" data-start="0" data-duration="145" data-track-index="5" data-track-kind="captions" data-width="1920" data-height="1080" style="z-index:40"></div>
+<div id="problem" class="clip" data-composition-id="problem" data-composition-src="compositions/problem.html" data-start="0" data-duration="11.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:10"></div>
+<div id="gap" class="clip" data-composition-id="gap" data-composition-src="compositions/gap.html" data-start="11.5" data-duration="13.71" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:11"></div>
+<div id="product" class="clip" data-composition-id="product" data-composition-src="compositions/product.html" data-start="25.21" data-duration="11.39" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:12"></div>
+<div id="how" class="clip" data-composition-id="how" data-composition-src="compositions/how.html" data-start="36.6" data-duration="23.12" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:13"></div>
+<div id="stack" class="clip" data-composition-id="stack" data-composition-src="compositions/stack.html" data-start="59.72" data-duration="29.7" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:14"></div>
+<div id="tracks" class="clip" data-composition-id="tracks" data-composition-src="compositions/tracks.html" data-start="89.42" data-duration="13.35" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:15"></div>
+<div id="demo" class="clip" data-composition-id="demo" data-composition-src="compositions/demo.html" data-start="102.77" data-duration="32.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:16"></div>
+<div id="close" class="clip" data-composition-id="close" data-composition-src="compositions/close.html" data-start="135.27" data-duration="9.73" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080" style="z-index:17"></div>
+<div id="cv0" class="cover" style="position:absolute;inset:0;z-index:60;background:#ec4a14;clip-path:inset(0 100% 0 0);pointer-events:none"></div>
+<div id="cv1" class="cover" style="position:absolute;inset:0;z-index:60;background:#ec4a14;clip-path:inset(0 100% 0 0);pointer-events:none"></div>
+<div id="cv2" class="cover" style="position:absolute;inset:0;z-index:60;background:#ec4a14;clip-path:inset(0 100% 0 0);pointer-events:none"></div>
+<div id="cv3" class="cover" style="position:absolute;inset:0;z-index:60;background:#ec4a14;clip-path:inset(0 100% 0 0);pointer-events:none"></div>
+<div id="cv4" class="cover" style="position:absolute;inset:0;z-index:60;background:#ec4a14;clip-path:inset(0 100% 0 0);pointer-events:none"></div>
+<div id="cv5" class="cover" style="position:absolute;inset:0;z-index:60;background:#ec4a14;clip-path:inset(0 100% 0 0);pointer-events:none"></div>
+<div id="cv6" class="cover" style="position:absolute;inset:0;z-index:60;background:#000;clip-path:inset(0 100% 0 0);opacity:0;pointer-events:none"></div>
+<audio id="score" class="clip" src="assets/score.wav" data-start="0" data-duration="145" data-track-index="2" data-volume="1"></audio>
+<audio id="vo-s1" class="clip" src="assets/vo/s1.mp3" data-start="0.8" data-duration="10.501" data-track-index="3" data-volume="1"></audio>
+<audio id="vo-s2" class="clip" src="assets/vo/s2.mp3" data-start="11.9" data-duration="13.113" data-track-index="4" data-volume="1"></audio>
+<audio id="vo-s3" class="clip" src="assets/vo/s3.mp3" data-start="25.61" data-duration="10.789" data-track-index="5" data-volume="1"></audio>
+<audio id="vo-s4" class="clip" src="assets/vo/s4.mp3" data-start="37" data-duration="22.517" data-track-index="6" data-volume="1"></audio>
+<audio id="vo-s5" class="clip" src="assets/vo/s5.mp3" data-start="60.12" data-duration="29.100" data-track-index="7" data-volume="1"></audio>
+<audio id="vo-s6" class="clip" src="assets/vo/s6.mp3" data-start="89.82" data-duration="12.748" data-track-index="8" data-volume="1"></audio>
+<audio id="vo-s7" class="clip" src="assets/vo/s7.mp3" data-start="103.17" data-duration="17.998" data-track-index="9" data-volume="1"></audio>
+<audio id="vo-s7b" class="clip" src="assets/vo/s7b.mp3" data-start="121.67" data-duration="12.147" data-track-index="10" data-volume="1"></audio>
+<audio id="vo-s8" class="clip" src="assets/vo/s8.mp3" data-start="135.67" data-duration="3.788" data-track-index="11" data-volume="1"></audio>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo('#cv0',{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0% 0 0)',duration:.36,ease:'power3.in'},11.14).to('#cv0',{clipPath:'inset(0 0 0 100%)',duration:.5,ease:'power3.out'},11.5);
+tl.fromTo('#cv1',{clipPath:'inset(100% 0 0 0)'},{clipPath:'inset(0% 0 0 0)',duration:.36,ease:'power3.in'},24.85).to('#cv1',{clipPath:'inset(0 0 100% 0)',duration:.5,ease:'power3.out'},25.21);
+tl.fromTo('#cv2',{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0% 0 0)',duration:.36,ease:'power3.in'},36.24).to('#cv2',{clipPath:'inset(0 0 0 100%)',duration:.5,ease:'power3.out'},36.6);
+tl.fromTo('#cv3',{clipPath:'inset(100% 0 0 0)'},{clipPath:'inset(0% 0 0 0)',duration:.36,ease:'power3.in'},59.36).to('#cv3',{clipPath:'inset(0 0 100% 0)',duration:.5,ease:'power3.out'},59.72);
+tl.fromTo('#cv4',{clipPath:'circle(0% at 50% 50%)'},{clipPath:'circle(78% at 50% 50%)',duration:.42,ease:'power3.in'},89.00).to('#cv4',{clipPath:'circle(0% at 50% 50%)',duration:.55,ease:'power3.out'},89.42);
+tl.fromTo('#cv5',{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0% 0 0)',duration:.36,ease:'power3.in'},102.41).to('#cv5',{clipPath:'inset(0 0 0 100%)',duration:.5,ease:'power3.out'},102.77);
+tl.fromTo('#cv6',{clipPath:'inset(0 0 0 0)',opacity:0},{opacity:.85,duration:.3,ease:'power2.in'},134.97).to('#cv6',{opacity:0,duration:.6,ease:'power2.out'},135.27);
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

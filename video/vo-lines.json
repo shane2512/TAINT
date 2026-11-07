@@ -1,0 +1,11 @@
+{
+ "s1": "May twenty twenty-six. One tweet, written in Morse code, told an AI agent to send about a hundred and fifty thousand dollars to a stranger. The agent obeyed.",
+ "s2": "Agents now hold wallets, and they read the internet. Whoever writes that text can steer the money. Allowlists check where funds go. Simulators check what a transaction does. Nobody records who decided.",
+ "s3": "This is Taint. A wallet for AI agents that checks who decided. Every recipient, token and amount carries its provenance: it came from you, or from outside text.",
+ "s4": "The planner never sees attacker text, only opaque handles. A separate extractor turns outside content into typed values, and anything that doesn't parse never becomes one. Each argument is stamped either owner or untrusted. Then a NEAR contract enforces the rule. Owner-decided values pass, within caps. Untrusted ones are held for your co-sign.",
+ "s5": "On NEAR, every owner gets their own account in the policy contract, with their own balance, address book and caps. Runs are signed with NEP-413. Co-signs can be relayed with NEP-366 delegate actions. And inference runs on NEAR AI Cloud, with response signatures that we check. The worker's T-E-E attestation is still stubbed, and we say so. Against a real model, the naive agent was drained in twenty out of twenty attacks. Taint executed none of them.",
+ "s6": "Security, because it stops the drain. Agents, because the agent can still read everything. Pry-vuh-see, because inference runs on confidential models. Real world, because it is live on testnet today.",
+ "s7": "Live, on testnet. I connect my own wallet and run the Morse-code tweet. Three agents read the same text. Taint holds the payment, and shows the source: x dot com slash attacker. I review it on the co-sign page, and approve once. Only then does the contract pay.",
+ "s7b": "This is my wallet page: my balance, my caps, and a pause switch. To get started, deposit your funds into your Taint wallet. You set the limits, and you can pause or withdraw at any time.",
+ "s8": "Allowlists check where money goes. Taint checks who decided."
+}

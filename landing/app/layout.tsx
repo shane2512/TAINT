@@ -8,7 +8,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variab
 export const metadata: Metadata = {
   title: "TAINT: allowlists check where money goes, TAINT checks who decided",
   description: "A provenance-gated wallet for AI agents on NEAR testnet.",
-  metadataBase: new URL("https://taint-site.vercel.app"),
+  metadataBase: new URL("https://taint.shinc.tech"),
   openGraph: { title: "TAINT: who decided?", description: "A provenance-gated wallet for AI agents on NEAR testnet.", type: "website" },
   twitter: { card: "summary_large_image" },
 };

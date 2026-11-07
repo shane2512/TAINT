@@ -1,0 +1,62 @@
+<template>
+<style>@font-face{font-family:"Inter Tight";font-weight:400;src:url("assets/fonts/InterTight-400.woff2") format("woff2");}@font-face{font-family:"Inter Tight";font-weight:500;src:url("assets/fonts/InterTight-500.woff2") format("woff2");}@font-face{font-family:"Inter Tight";font-weight:600;src:url("assets/fonts/InterTight-600.woff2") format("woff2");}
+#root{position:absolute;inset:0;overflow:hidden;background:#07080c;color:#fff;font-family:"Inter Tight","Helvetica Neue",Arial,sans-serif;letter-spacing:-.011em;-webkit-font-smoothing:antialiased;--bg:#07080c;--card:#111318;--card2:#171a21;--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.17);--dim:#8d9099;--dim2:#8d9099;--soft:#c9cbd1;--orange:#ec4a14;--hot:#ff6a3d;--paper:#fafafa;--ink:#0b0c10;--mono:"JetBrains Mono",ui-monospace,monospace}
+#root *{box-sizing:border-box;margin:0;padding:0}
+#root h1,#root h2,#root h3{font-weight:500;letter-spacing:-.03em;line-height:1.04}
+.abs{position:absolute}
+.gridbg{position:absolute;inset:-120px;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:120px 120px;-webkit-mask-image:radial-gradient(80% 80% at 50% 50%,#000 30%,transparent 100%);mask-image:radial-gradient(80% 80% at 50% 50%,#000 30%,transparent 100%)}
+.glow{position:absolute;inset:0;background:radial-gradient(55% 42% at 50% 105%,rgba(217,106,44,.55) 0%,rgba(125,48,22,.3) 40%,transparent 72%)}
+.top{position:absolute;left:96px;right:96px;top:56px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.brand{display:inline-flex;align-items:center;gap:14px;font-size:30px;font-weight:500;letter-spacing:-.03em}
+.chap{font-size:28px;font-weight:500;color:var(--dim);display:flex;gap:14px;align-items:center}.chap b{color:var(--orange);font-weight:600}
+.gl{font-size:28px;font-weight:500;color:var(--dim);letter-spacing:.02em}
+.pill{display:inline-block;font-weight:600;font-size:28px;letter-spacing:.06em;padding:7px 12px;text-transform:uppercase;border-radius:2px;white-space:nowrap}
+.pill.bad{background:var(--orange);color:#fff}.pill.held{background:#fff;color:var(--ink)}.pill.good{border:1px solid rgba(255,255,255,.5)}.pill.dim{color:var(--dim);border:1px solid var(--line2)}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;font-size:28px;font-weight:500;border-radius:2px;background:#fff;color:var(--ink)}
+.btn.ghost{background:rgba(255,255,255,.06);border:1px solid var(--line2);color:#fff}
+.card{background:var(--card);border:1px solid var(--line2)}
+.paper{background:var(--paper);color:var(--ink)}
+.mono{font-family:var(--mono)}
+.ln{display:block;overflow:hidden;padding-bottom:.1em}.ln>span{display:inline-block}
+.hatch{position:absolute;left:0;right:0;height:50px;border-block:1px solid var(--line2);background:repeating-linear-gradient(135deg,rgba(255,255,255,.1) 0 1px,transparent 1px 9px)}
+</style>
+<div id="root" data-composition-id="demo" data-width="1920" data-height="1080">
+<div class="gridbg"></div>
+<div class="top"><div class="brand"><svg class="mark" width="36" height="36" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1" fill="currentColor"/><rect x="9.5" y="8" width="5" height="9" fill="currentColor"/><circle cx="12" cy="20" r="2.6" fill="#ec4a14"/></svg>TAINT</div><div class="chap"><b>07</b>Live demo</div></div>
+
+<div id="d-win" class="abs" style="left:328px;top:110px;width:1264px;height:754px;border-radius:14px;background:rgba(255,255,255,.08);padding:0 10px 10px;box-shadow:0 40px 140px rgba(0,0,0,.55)">
+  <div style="height:44px;display:flex;align-items:center;gap:9px"><i style="width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.55)"></i><i style="width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.28)"></i><i style="width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.28)"></i><span id="d-dot" style="margin-left:18px;width:10px;height:10px;border-radius:50%;background:var(--orange)"></span><span style="font-size:28px;color:#fff;font-weight:500;letter-spacing:.02em">LIVE · NEAR TESTNET · real contract, real model, my own wallet</span></div>
+  <div id="d-vp" style="position:relative;width:1244px;height:700px;overflow:hidden;border-radius:6px;background:#000">
+    <div id="d-zoom" style="position:absolute;inset:0;transform-origin:50% 50%"><video id="d-video" class="clip" data-start="0" data-duration="32.4" data-track-index="1" src="assets/demo.mp4" muted playsinline style="position:absolute;left:0;top:0;width:1244px;height:700px;object-fit:cover"></video></div>
+    <div class="abs" style="left:28px;bottom:26px;display:flex;align-items:stretch;background:rgba(7,8,12,.88);border:1px solid var(--line2);backdrop-filter:blur(6px)">
+      <div id="d-num" class="mono" style="padding:14px 18px;background:var(--orange);font-size:34px;font-weight:600;min-width:84px;text-align:center">01</div>
+      <div style="position:relative;min-width:720px;height:68px"><div id="d-s0" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">Connect my own wallet</div><div id="d-s1" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">Sign to prove it is my account</div><div id="d-s2" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">Three agents read one tweet</div><div id="d-s3" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">TAINT holds the payment</div><div id="d-s4" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">I review it on the co-sign page</div><div id="d-s5" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">Approve once: the contract pays</div><div id="d-s6" class="dstep" style="position:absolute;left:0;top:0;height:68px;display:flex;align-items:center;padding:0 24px;font-size:36px;font-weight:500;opacity:0;white-space:nowrap">Fund your Taint wallet, set your limits</div></div>
+    </div>
+  </div>
+</div>
+<div class="abs mono" style="left:328px;top:872px;font-size:28px;color:var(--dim)">[taint] network=testnet mode=LIVE ATTESTATION STUBBED</div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+
+const rv=(s,t,d=.9,y=28,ease="power4.out")=>tl.fromTo(s,{opacity:0,y,filter:"blur(10px)"},{opacity:1,y:0,filter:"blur(0px)",duration:d,ease},t);
+const lines=(s,t,gap=.12,d=1)=>tl.fromTo(s,{yPercent:105,opacity:0},{yPercent:0,opacity:1,duration:d,ease:"expo.out",stagger:gap},t);
+const words=(s,t,gap=.07,d=.7)=>tl.fromTo(s,{opacity:0,filter:"blur(8px)",y:14},{opacity:1,filter:"blur(0px)",y:0,duration:d,ease:"power4.out",stagger:gap},t);
+const fade=(s,t,d=.5)=>tl.fromTo(s,{opacity:0},{opacity:1,duration:d,ease:"power2.out"},t);
+const out=(s,t,d=.4)=>tl.to(s,{opacity:0,filter:"blur(8px)",duration:d,ease:"power3.in"},t);
+const grow=(s,t,d=.9)=>tl.fromTo(s,{scaleX:0},{scaleX:1,duration:d,ease:"expo.out",transformOrigin:"left center"},t);
+
+tl.fromTo('.gridbg',{x:0},{x:120,duration:32.5,ease:'none'},0);
+
+const S=[1.2,3,5.6,8.2,12.3,14.7,18.6];
+tl.fromTo('#d-win',{opacity:0,scale:.82,y:60,filter:'blur(16px)'},{opacity:1,scale:1,y:0,filter:'blur(0px)',duration:1.1,ease:'expo.out'},.1);
+S.forEach((t,i)=>{
+  const a=t;
+  tl.fromTo('#d-s'+i,{opacity:0,x:24,filter:'blur(6px)'},{opacity:1,x:0,filter:'blur(0px)',duration:.45,ease:'power4.out'},a);
+  tl.call(()=>{document.getElementById('d-num').textContent='0'+(i+1)},null,a);
+  if(S[i+1]!==undefined) tl.to('#d-s'+i,{opacity:0,filter:'blur(6px)',duration:.3,ease:'power3.in'},S[i+1]-.1);
+});
+
+window.__timelines["demo"] = tl;
+</script>
+</template>

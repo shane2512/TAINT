@@ -1,0 +1,218 @@
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\dfol\NEAR\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\dfol\NEAR\landing\package-lock.json
+
+   ▲ Next.js 15.5.28
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 13.1s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/11) ...
+   Generating static pages (2/11) 
+   Generating static pages (5/11) 
+   Generating static pages (8/11) 
+ ✓ Generating static pages (11/11)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      178 B         168 kB
+├ ○ /_not-found                            996 B         104 kB
+├ ƒ /api/[...path]                         127 B         103 kB
+├ ○ /cosign                              2.99 kB         187 kB
+├ ○ /demo                                2.46 kB         187 kB
+├ ○ /opengraph-image                       127 B         103 kB
+├ ○ /policy                              6.07 kB         137 kB
+├ ○ /redteam                             1.29 kB         180 kB
+├ ○ /results                             1.07 kB         180 kB
+└ ○ /wallet                              2.07 kB         186 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-51cc180f6c33fa39.js       46.3 kB
+  ├ chunks/4bd1b696-409494caf8c83275.js  54.2 kB
+  └ other shared chunks (total)          2.32 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\dfol\NEAR\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\dfol\NEAR\landing\package-lock.json
+[WebServer] 
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\dfol\NEAR\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\dfol\NEAR\landing\package-lock.json
+[WebServer] 
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\dfol\NEAR\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\dfol\NEAR\landing\package-lock.json
+[WebServer] 
+
+Running 95 tests using 1 worker
+
+  ok  1 e2e\00-first-run.spec.ts:5:7 › first run, before anything has happened › [F20] the co-sign page says nothing is waiting and points at the demo (3.7s)
+  ok  2 e2e\00-first-run.spec.ts:12:7 › first run, before anything has happened › [F21] the wallet starts empty, at 0 of the 5 NEAR cap (588ms)
+  ok  3 e2e\00-first-run.spec.ts:19:7 › first run, before anything has happened › [F22] the attack log starts empty and every wallet is waiting (622ms)
+  ok  4 e2e\01-landing.spec.ts:6:7 › landing page › [F01] the hero says what TAINT is, and the limits are stated in the page (744ms)
+  ok  5 e2e\01-landing.spec.ts:15:7 › landing page › [F02] the nav scrolls to its sections and opens the app and the repository (10.5s)
+  ok  6 e2e\01-landing.spec.ts:35:7 › landing page › [F03] the product window in the hero counts its number up and says it is sample data (3.6s)
+  ok  7 e2e\01-landing.spec.ts:42:7 › landing page › [F04] the halftone art is really painted, and moves (4.4s)
+  ok  8 e2e\01-landing.spec.ts:56:7 › landing page › [F05] the rules widget answers from the real rules (1.3s)
+  ok  9 e2e\01-landing.spec.ts:71:7 › landing page › [F06] a source merely named owner is still outside (999ms)
+  x  10 e2e\01-landing.spec.ts:79:7 › landing page › [F07] the results grid shows the saved live results (11.1s)
+  ok 11 e2e\01-landing.spec.ts:96:7 › landing page › [F08] the footer reaches every page of the app (3.8s)
+  ok 12 e2e\01-landing.spec.ts:107:7 › landing page › [F09] smooth scroll is on, and the headings slide into place (1.8s)
+  ok 13 e2e\01-landing.spec.ts:117:7 › landing page › [F10] nothing from the reference or any made-up claim is left (523ms)
+  ok 14 e2e\01-landing.spec.ts:122:7 › landing page › [F76] the two modes lead to the live demo and to the repository (2.7s)
+  ok 15 e2e\01-landing.spec.ts:133:7 › landing page › [F77] the handle codes beside the widget keep changing (2.4s)
+  ok 16 e2e\01-landing.spec.ts:141:7 › landing page › [F78] the questions open one at a time, and say what is not done (2.2s)
+  ok 17 e2e\01-landing.spec.ts:156:7 › reduced motion › [F11] content is there at once, with no smooth-scroll hijack (810ms)
+  ok 18 e2e\02-rob.spec.ts:4:7 › Rob the Pet › [F12] every preset is offered, labelled attack or legitimate in words (621ms)
+  ok 19 e2e\02-rob.spec.ts:11:9 › Rob the Pet › [F13] F1: the three wallets do what the fixture says (681ms)
+  ok 20 e2e\02-rob.spec.ts:11:9 › Rob the Pet › [F13] F2: the three wallets do what the fixture says (691ms)
+  ok 21 e2e\02-rob.spec.ts:11:9 › Rob the Pet › [F13] F3: the three wallets do what the fixture says (674ms)
+  ok 22 e2e\02-rob.spec.ts:11:9 › Rob the Pet › [F13] L1: the three wallets do what the fixture says (702ms)
+  ok 23 e2e\02-rob.spec.ts:11:9 › Rob the Pet › [F13] L2: the three wallets do what the fixture says (697ms)
+  ok 24 e2e\02-rob.spec.ts:21:7 › Rob the Pet › [F14] TAINT says where a held value came from, and links to the co-sign page (776ms)
+  ok 25 e2e\02-rob.spec.ts:30:7 › Rob the Pet › [F15] each attack lands in the log, newest first (779ms)
+  ok 26 e2e\02-rob.spec.ts:39:7 › Rob the Pet › [F16] own text explains it needs a live model, in MOCK (609ms)
+  ok 27 e2e\03-cosign.spec.ts:4:7 › co-sign › [F17] a held payment shows the action, where it came from, and the MOCK note (830ms)
+  ok 28 e2e\03-cosign.spec.ts:15:7 › co-sign › [F18] approve once: it executes, leaves the list, and counts against the cap (1.1s)
+  ok 29 e2e\03-cosign.spec.ts:32:7 › co-sign › [F19] approve once leaves no trace: the same attack is held again (629ms)
+  ok 30 e2e\03-cosign.spec.ts:37:7 › co-sign › [F23] a lookalike of a known vendor is called out (747ms)
+  ok 31 e2e\03-cosign.spec.ts:44:7 › co-sign › [F24] a swap has no recipient to remember (848ms)
+  ok 32 e2e\03-cosign.spec.ts:52:7 › co-sign › [F25] a second approval of the same proposal is refused (1.3s)
+  ok 33 e2e\03-cosign.spec.ts:66:7 › co-sign › [F26] an approval for a changed proposal is refused by the hash check (817ms)
+  ok 34 e2e\03-cosign.spec.ts:79:7 › co-sign › [F27] approve and remember adds the entry, and its 1 NEAR cap still binds (1.3s)
+  ok 35 e2e\03-cosign.spec.ts:98:7 › co-sign › [F28] an approval that would pass the 24 hour cap is refused (3.7s)
+  ok 36 e2e\04-wallet.spec.ts:8:7 › wallet › [F29] remember an account with a cap, see it, forget it (703ms)
+  ok 37 e2e\04-wallet.spec.ts:22:7 › wallet › [F30] pin and unpin an account (627ms)
+  ok 38 e2e\04-wallet.spec.ts:30:7 › wallet › [F31] a bad account or cap is refused with a reason, and changes nothing (642ms)
+  ok 39 e2e\04-wallet.spec.ts:42:7 › wallet › [F32] the vendor pinned by the L1 preset shows up here (688ms)
+  ok 40 e2e\04-wallet.spec.ts:50:7 › wallet › [F33] the owner calls that only exist on the contract are listed, not faked (445ms)
+  ok 41 e2e\05-policy.spec.ts:13:7 › policy › [F34] the shared rule table runs and every case passes (565ms)
+  ok 42 e2e\05-policy.spec.ts:21:7 › policy › [F35] a value from outside is held, and owner values execute (1.2s)
+  ok 43 e2e\05-policy.spec.ts:32:7 › policy › [F36] a remembered recipient passes inside its 1 NEAR cap and is held above it (1.1s)
+  ok 44 e2e\05-policy.spec.ts:42:7 › policy › [F37] a pinned account's payee gets the 0.5 NEAR cooldown cap (1.2s)
+  ok 45 e2e\05-policy.spec.ts:52:7 › policy › [F38] what was already spent counts against the 5 NEAR cap (1.3s)
+  ok 46 e2e\05-policy.spec.ts:63:7 › policy › [F39] an outside swap token is always held (849ms)
+  ok 47 e2e\05-policy.spec.ts:71:7 › policy › [F40] attacker text is shown as text, never run as markup (902ms)
+  ok 48 e2e\05-policy.spec.ts:82:7 › policy › [F65] an outside source that is merely named owner is still outside (809ms)
+  ok 49 e2e\05-policy.spec.ts:89:7 › policy › [F41] an invalid recipient gets an explanation, not a verdict (743ms)
+  ok 50 e2e\05-policy.spec.ts:94:7 › policy › [F42] the desk changes nothing in the wallet (838ms)
+  ok 51 e2e\06-proof.spec.ts:6:7 › red team › [F43] the attacks are listed before anything runs (496ms)
+  ok 52 e2e\06-proof.spec.ts:12:7 › red team › [F44] running it holds everything except the two by-design cases (635ms)
+  ok 53 e2e\06-proof.spec.ts:24:7 › red team › [F45] the saved live runs show their error rows (501ms)
+  ok 54 e2e\06-proof.spec.ts:43:7 › results › [F46] the live replay table equals the saved run file (559ms)
+  ok 55 e2e\06-proof.spec.ts:58:7 › results › [F47] the mock replay can be run, and matches its expectations (747ms)
+  ok 56 e2e\06-proof.spec.ts:65:7 › results › [F48] testnet transactions link out, and what is not done is stated (567ms)
+  ok 57 e2e\07-shell.spec.ts:7:9 › every app page › [F49] /demo shows the mode banner and marks itself in the nav (558ms)
+  ok 58 e2e\07-shell.spec.ts:7:9 › every app page › [F49] /cosign shows the mode banner and marks itself in the nav (488ms)
+  ok 59 e2e\07-shell.spec.ts:7:9 › every app page › [F49] /wallet shows the mode banner and marks itself in the nav (435ms)
+  ok 60 e2e\07-shell.spec.ts:7:9 › every app page › [F49] /policy shows the mode banner and marks itself in the nav (507ms)
+  ok 61 e2e\07-shell.spec.ts:7:9 › every app page › [F49] /redteam shows the mode banner and marks itself in the nav (450ms)
+  ok 62 e2e\07-shell.spec.ts:7:9 › every app page › [F49] /results shows the mode banner and marks itself in the nav (483ms)
+  ok 63 e2e\07-shell.spec.ts:17:7 › every app page › [F50] the brand goes back to the landing page (720ms)
+  ok 64 e2e\07-shell.spec.ts:24:7 › every app page › [F51] the keyboard can reach the controls, with a visible focus ring (454ms)
+  ok 65 e2e\07-shell.spec.ts:35:7 › no runtime behind the site › [F52] the proxy answers 503 with the command to run (52ms)
+  ok 66 e2e\07-shell.spec.ts:42:9 › no runtime behind the site › [F53] /demo says the runtime is off, instead of breaking (525ms)
+  ok 67 e2e\07-shell.spec.ts:42:9 › no runtime behind the site › [F53] /cosign says the runtime is off, instead of breaking (506ms)
+  ok 68 e2e\07-shell.spec.ts:42:9 › no runtime behind the site › [F53] /wallet says the runtime is off, instead of breaking (457ms)
+  ok 69 e2e\07-shell.spec.ts:42:9 › no runtime behind the site › [F53] /policy says the runtime is off, instead of breaking (499ms)
+  ok 70 e2e\07-shell.spec.ts:42:9 › no runtime behind the site › [F53] /redteam says the runtime is off, instead of breaking (486ms)
+  ok 71 e2e\07-shell.spec.ts:42:9 › no runtime behind the site › [F53] /results says the runtime is off, instead of breaking (491ms)
+  ok 72 e2e\07-shell.spec.ts:49:7 › no runtime behind the site › [F54] the landing page still reads, and the desk explains itself (787ms)
+  ok 73 e2e\07-shell.spec.ts:63:9 › phone width › [F55] / fits with no sideways scroll (1.2s)
+  ok 74 e2e\07-shell.spec.ts:63:9 › phone width › [F55] /demo fits with no sideways scroll (1.0s)
+  ok 75 e2e\07-shell.spec.ts:63:9 › phone width › [F55] /cosign fits with no sideways scroll (1.0s)
+  ok 76 e2e\07-shell.spec.ts:63:9 › phone width › [F55] /wallet fits with no sideways scroll (945ms)
+  ok 77 e2e\07-shell.spec.ts:63:9 › phone width › [F55] /policy fits with no sideways scroll (1.1s)
+  ok 78 e2e\07-shell.spec.ts:63:9 › phone width › [F55] /redteam fits with no sideways scroll (1.0s)
+  ok 79 e2e\07-shell.spec.ts:63:9 › phone width › [F55] /results fits with no sideways scroll (1.1s)
+  ok 80 e2e\07-shell.spec.ts:71:7 › phone width › [F56] the app can be used on a phone: rob, then approve (743ms)
+  ok 81 e2e\08-map.spec.ts:7:5 › docs/E2E-MAP.md and the test titles list the same features (8ms)
+  ok 82 e2e\09-public.spec.ts:6:7 › public demo › [F62] each visitor has a separate wallet, log and held list (2.1s)
+  ok 83 e2e\09-public.spec.ts:30:7 › public demo › [F63] the public demo has no free-text attack and says why, and the API refuses it too (599ms)
+  ok 84 e2e\09-public.spec.ts:38:7 › public demo › [F64] the visitor's id is a private cookie that the page cannot read (516ms)
+  ok 85 e2e\10-wallet.spec.ts:47:7 › approve on testnet with your own wallet › [F66] the real contract's held payments show their source and a lookalike warning (919ms)
+  ok 86 e2e\10-wallet.spec.ts:57:7 › approve on testnet with your own wallet › [F67] with no wallet connected nothing can be approved, and Connect asks the wallet (1.0s)
+  ok 87 e2e\10-wallet.spec.ts:65:7 › approve on testnet with your own wallet › [F68] a wallet that is not the owner account is told so and cannot approve (1.0s)
+  ok 88 e2e\10-wallet.spec.ts:73:7 › approve on testnet with your own wallet › [F69] the owner's wallet is asked to sign one cosign call for exactly that proposal (1.1s)
+  ok 89 e2e\10-wallet.spec.ts:84:7 › approve on testnet with your own wallet › [F70] approve and remember asks the contract to remember (1.0s)
+  ok 90 e2e\10-wallet.spec.ts:91:7 › approve on testnet with your own wallet › [F71] a refusal the contract returns as an ordinary value is shown as a refusal, not an approval (941ms)
+  ok 91 e2e\10-wallet.spec.ts:100:7 › approve on testnet with your own wallet › [F72] a wallet the owner declines in leaves the proposal untouched (941ms)
+  ok 92 e2e\10-wallet.spec.ts:108:7 › approve on testnet with your own wallet › [F73] coming back from a wallet that signs elsewhere reports what the chain did (892ms)
+  ok 93 e2e\10-wallet.spec.ts:116:7 › approve on testnet with your own wallet › [F74] coming back after a refusal says the contract refused it (855ms)
+  ok 94 e2e\10-wallet.spec.ts:123:7 › approve on testnet with your own wallet › [F75] a server with no testnet contract configured says so (876ms)
+  x  95 e2e\99-rate-limit.spec.ts:4:5 › [F57] past the attack limit, the page says so and the wallets stay put (11.2s)
+
+
+  1) e2e\01-landing.spec.ts:79:7 › landing page › [F07] the results grid shows the saved live results 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByTestId('statgrid').locator('.stat').nth(1).locator('.stat-n')
+    Expected: "0"
+    Received: "1"
+    Timeout:  9000ms
+
+    Call log:
+      - Expect "toHaveText" getByTestId('statgrid').locator('.stat').nth(1).locator('.stat-n') with timeout 9000ms
+      - waiting for getByTestId('statgrid').locator('.stat').nth(1).locator('.stat-n')
+        21 × locator resolved to <p class="stat-n">…</p>
+           - unexpected value "1"
+
+
+      87 |     await expect(cells.nth(0).locator(".stat-n")).toHaveText(String(n("taint", "F", "pending")), { timeout: 9000 });
+      88 |     await expect(cells.nth(0)).toContainText(`of ${n("taint", "F")}`);
+    > 89 |     await expect(cells.nth(1).locator(".stat-n")).toHaveText("0", { timeout: 9000 });
+         |                                                   ^
+      90 |     await expect(cells.nth(1)).toContainText(`in ${redTotal} live red-team attempts`);
+      91 |     await expect(cells.nth(2).locator(".stat-n")).toHaveText(String(n("taint", "L", "ok")), { timeout: 9000 });
+      92 |     await expect(grid).toContainText("One model, one provider, four fixtures the authors chose");
+        at C:\dfol\NEAR\landing\e2e\01-landing.spec.ts:89:51
+
+    Error Context: test-results\01-landing-landing-page-F0-0824e-hows-the-saved-live-results\error-context.md
+
+  2) e2e\99-rate-limit.spec.ts:4:5 › [F57] past the attack limit, the page says so and the wallets stay put 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.error')
+    Expected substring: "rate limit"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" locator('.error') with timeout 10000ms
+      - waiting for locator('.error')
+
+
+       8 |   await page.goto("/demo");
+       9 |   await preset(page, "L2").click();
+    > 10 |   await expect(page.locator(".error")).toContainText("rate limit");
+         |                                        ^
+      11 |   await expect(page.getByTestId("pet-taint")).toContainText("WAITING");
+      12 | });
+      13 |
+        at C:\dfol\NEAR\landing\e2e\99-rate-limit.spec.ts:10:40
+
+    Error Context: test-results\99-rate-limit--F57-past-th-483e0-so-and-the-wallets-stay-put\error-context.md
+
+  2 failed
+    e2e\01-landing.spec.ts:79:7 › landing page › [F07] the results grid shows the saved live results 
+    e2e\99-rate-limit.spec.ts:4:5 › [F57] past the attack limit, the page says so and the wallets stay put 
+  93 passed (2.6m)

@@ -1,0 +1,61 @@
+<template>
+<style>@font-face{font-family:"Inter Tight";font-weight:400;src:url("assets/fonts/InterTight-400.woff2") format("woff2");}@font-face{font-family:"Inter Tight";font-weight:500;src:url("assets/fonts/InterTight-500.woff2") format("woff2");}@font-face{font-family:"Inter Tight";font-weight:600;src:url("assets/fonts/InterTight-600.woff2") format("woff2");}
+#root{position:absolute;inset:0;overflow:hidden;background:#07080c;color:#fff;font-family:"Inter Tight","Helvetica Neue",Arial,sans-serif;letter-spacing:-.011em;-webkit-font-smoothing:antialiased;--bg:#07080c;--card:#111318;--card2:#171a21;--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.17);--dim:#8d9099;--dim2:#8d9099;--soft:#c9cbd1;--orange:#ec4a14;--hot:#ff6a3d;--paper:#fafafa;--ink:#0b0c10;--mono:"JetBrains Mono",ui-monospace,monospace}
+#root *{box-sizing:border-box;margin:0;padding:0}
+#root h1,#root h2,#root h3{font-weight:500;letter-spacing:-.03em;line-height:1.04}
+.abs{position:absolute}
+.gridbg{position:absolute;inset:-120px;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:120px 120px;-webkit-mask-image:radial-gradient(80% 80% at 50% 50%,#000 30%,transparent 100%);mask-image:radial-gradient(80% 80% at 50% 50%,#000 30%,transparent 100%)}
+.glow{position:absolute;inset:0;background:radial-gradient(55% 42% at 50% 105%,rgba(217,106,44,.55) 0%,rgba(125,48,22,.3) 40%,transparent 72%)}
+.top{position:absolute;left:96px;right:96px;top:56px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.brand{display:inline-flex;align-items:center;gap:14px;font-size:30px;font-weight:500;letter-spacing:-.03em}
+.chap{font-size:28px;font-weight:500;color:var(--dim);display:flex;gap:14px;align-items:center}.chap b{color:var(--orange);font-weight:600}
+.gl{font-size:28px;font-weight:500;color:var(--dim);letter-spacing:.02em}
+.pill{display:inline-block;font-weight:600;font-size:28px;letter-spacing:.06em;padding:7px 12px;text-transform:uppercase;border-radius:2px;white-space:nowrap}
+.pill.bad{background:var(--orange);color:#fff}.pill.held{background:#fff;color:var(--ink)}.pill.good{border:1px solid rgba(255,255,255,.5)}.pill.dim{color:var(--dim);border:1px solid var(--line2)}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;font-size:28px;font-weight:500;border-radius:2px;background:#fff;color:var(--ink)}
+.btn.ghost{background:rgba(255,255,255,.06);border:1px solid var(--line2);color:#fff}
+.card{background:var(--card);border:1px solid var(--line2)}
+.paper{background:var(--paper);color:var(--ink)}
+.mono{font-family:var(--mono)}
+.ln{display:block;overflow:hidden;padding-bottom:.1em}.ln>span{display:inline-block}
+.hatch{position:absolute;left:0;right:0;height:50px;border-block:1px solid var(--line2);background:repeating-linear-gradient(135deg,rgba(255,255,255,.1) 0 1px,transparent 1px 9px)}
+</style>
+<div id="root" data-composition-id="stack" data-width="1920" data-height="1080">
+<div class="gridbg"></div>
+<div class="top"><div class="brand"><svg class="mark" width="36" height="36" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1" fill="currentColor"/><rect x="9.5" y="8" width="5" height="9" fill="currentColor"/><circle cx="12" cy="20" r="2.6" fill="#ec4a14"/></svg>TAINT</div><div class="chap"><b>05</b>On NEAR</div></div>
+
+<div id="s-grid" class="abs" style="left:96px;right:96px;top:150px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;height:750px;gap:0">
+<div id="s-c1" class="cell" style="padding:28px 34px;border:1px solid var(--line2);background:rgba(17,19,24,.8)"><div class="gl">ONE CONTRACT · EVERY OWNER</div><div style="font-size:40px;letter-spacing:-.035em;margin:10px 0 10px;line-height:1.05">Your own account</div><div style="font-size:28px;line-height:1.4;color:var(--soft)">Balance, address book, pins, caps and held payments are stored per owner. Nobody else has power over your funds.</div><div class="mono" style="margin-top:22px;font-size:28px;color:var(--hot)">taint-myname.testnet</div></div>
+<div id="s-c2" class="cell" style="padding:28px 34px;border:1px solid var(--line2);background:rgba(17,19,24,.8)"><div class="gl">NEP-413</div><div style="font-size:40px;letter-spacing:-.035em;margin:10px 0 10px;line-height:1.05">Signed runs</div><div style="font-size:28px;line-height:1.4;color:var(--soft)">Every run is a message your own wallet signs. The site holds no keys.</div><div class="mono" style="margin-top:22px;font-size:28px;color:var(--dim)">signMessage · Meteor</div></div>
+<div id="s-c3" class="cell" style="padding:28px 34px;border:1px solid var(--line2);background:rgba(17,19,24,.8)"><div class="gl">NEP-366</div><div style="font-size:40px;letter-spacing:-.035em;margin:10px 0 10px;line-height:1.05">Delegate co-sign</div><div style="font-size:28px;line-height:1.4;color:var(--soft)">A held payment is approved with one tap and relayed as a delegate action.</div><div class="mono" style="margin-top:22px;font-size:28px;color:var(--dim)">owner → relayer → contract</div></div>
+<div id="s-c4" class="cell" style="padding:28px 34px;border:1px solid var(--line2);background:rgba(17,19,24,.8)"><div class="gl">NEAR AI CLOUD</div><div style="font-size:40px;letter-spacing:-.035em;margin:10px 0 10px;line-height:1.05">Inference you can check</div><div style="font-size:28px;line-height:1.4;color:var(--soft)">Model in a TEE. We check its nonce and signature.</div><div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap"><span class="pill good">Nonce bound</span><span class="pill good">Signature OK</span></div><div style="margin-top:12px;font-size:28px;color:var(--dim)">Intel quote chain: not verified</div></div>
+<div id="s-c5" class="cell" style="padding:34px 36px;border:1px dashed var(--orange);background:rgba(236,74,20,.08)"><div class="gl" style="color:var(--hot)">WORKER ATTESTATION</div><div style="font-size:40px;letter-spacing:-.035em;margin:10px 0 10px;line-height:1.05">Stubbed. We say so.</div><div style="font-size:28px;line-height:1.4;color:var(--soft)">The contract side is built and deployed, but switched off. No TEE has run the worker yet.</div><div style="margin-top:20px"><span class="pill bad">Stubbed</span></div></div>
+<div id="s-c6" class="cell paper" style="padding:34px 36px;border:1px solid var(--line2)"><div class="gl" style="color:#5d6069">REAL MODEL · 20 ATTACKS</div><div style="display:flex;gap:40px;margin-top:10px"><div><div id="s-a" style="font-size:132px;letter-spacing:-.05em;line-height:1;font-weight:500;color:var(--orange)">20/20</div><div style="font-size:28px;color:#5d6069;margin-top:6px">Naive agent drained</div></div><div><div id="s-b" style="font-size:132px;letter-spacing:-.05em;line-height:1;font-weight:500">0/20</div><div style="font-size:28px;color:#5d6069;margin-top:6px">TAINT executed</div></div></div></div>
+</div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+
+const rv=(s,t,d=.9,y=28,ease="power4.out")=>tl.fromTo(s,{opacity:0,y,filter:"blur(10px)"},{opacity:1,y:0,filter:"blur(0px)",duration:d,ease},t);
+const lines=(s,t,gap=.12,d=1)=>tl.fromTo(s,{yPercent:105,opacity:0},{yPercent:0,opacity:1,duration:d,ease:"expo.out",stagger:gap},t);
+const words=(s,t,gap=.07,d=.7)=>tl.fromTo(s,{opacity:0,filter:"blur(8px)",y:14},{opacity:1,filter:"blur(0px)",y:0,duration:d,ease:"power4.out",stagger:gap},t);
+const fade=(s,t,d=.5)=>tl.fromTo(s,{opacity:0},{opacity:1,duration:d,ease:"power2.out"},t);
+const out=(s,t,d=.4)=>tl.to(s,{opacity:0,filter:"blur(8px)",duration:d,ease:"power3.in"},t);
+const grow=(s,t,d=.9)=>tl.fromTo(s,{scaleX:0},{scaleX:1,duration:d,ease:"expo.out",transformOrigin:"left center"},t);
+
+tl.fromTo('.gridbg',{x:0},{x:120,duration:29.7,ease:'none'},0);
+
+const cells=['s-c1','s-c2','s-c3','s-c4','s-c5','s-c6'];
+const at=[0.40,7.51,9.36,12.76,17.52,21.48];
+cells.forEach((id,i)=>{
+  tl.fromTo('#'+id,{opacity:0,y:40,filter:'blur(12px)'},{opacity:1,y:0,filter:'blur(0px)',duration:.9,ease:'expo.out'},at[i]);
+  tl.fromTo('#'+id,{boxShadow:'inset 0 0 0 0 rgba(255,255,255,0)'},{boxShadow:'inset 0 0 0 2px rgba(255,255,255,.55)',duration:.35,ease:'power2.out'},at[i]+.4);
+  tl.to('#'+id,{boxShadow:'inset 0 0 0 0 rgba(255,255,255,0)',duration:.6,ease:'power2.inOut'},(at[i+1]??at[i]+4)-.2);
+});
+const c6=document.getElementById('s-b');
+tl.fromTo('#s-a',{opacity:0,y:20},{opacity:1,y:0,duration:.8,ease:'expo.out'},at[5]+.3);
+tl.fromTo('#s-b',{opacity:0,y:20},{opacity:1,y:0,duration:.8,ease:'expo.out'},26.61-.2);
+
+window.__timelines["stack"] = tl;
+</script>
+</template>

@@ -1,0 +1,62 @@
+<template>
+<style>@font-face{font-family:"Inter Tight";font-weight:400;src:url("assets/fonts/InterTight-400.woff2") format("woff2");}@font-face{font-family:"Inter Tight";font-weight:500;src:url("assets/fonts/InterTight-500.woff2") format("woff2");}@font-face{font-family:"Inter Tight";font-weight:600;src:url("assets/fonts/InterTight-600.woff2") format("woff2");}
+#root{position:absolute;inset:0;overflow:hidden;background:#07080c;color:#fff;font-family:"Inter Tight","Helvetica Neue",Arial,sans-serif;letter-spacing:-.011em;-webkit-font-smoothing:antialiased;--bg:#07080c;--card:#111318;--card2:#171a21;--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.17);--dim:#8d9099;--dim2:#8d9099;--soft:#c9cbd1;--orange:#ec4a14;--hot:#ff6a3d;--paper:#fafafa;--ink:#0b0c10;--mono:"JetBrains Mono",ui-monospace,monospace}
+#root *{box-sizing:border-box;margin:0;padding:0}
+#root h1,#root h2,#root h3{font-weight:500;letter-spacing:-.03em;line-height:1.04}
+.abs{position:absolute}
+.gridbg{position:absolute;inset:-120px;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:120px 120px;-webkit-mask-image:radial-gradient(80% 80% at 50% 50%,#000 30%,transparent 100%);mask-image:radial-gradient(80% 80% at 50% 50%,#000 30%,transparent 100%)}
+.glow{position:absolute;inset:0;background:radial-gradient(55% 42% at 50% 105%,rgba(217,106,44,.55) 0%,rgba(125,48,22,.3) 40%,transparent 72%)}
+.top{position:absolute;left:96px;right:96px;top:56px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.brand{display:inline-flex;align-items:center;gap:14px;font-size:30px;font-weight:500;letter-spacing:-.03em}
+.chap{font-size:28px;font-weight:500;color:var(--dim);display:flex;gap:14px;align-items:center}.chap b{color:var(--orange);font-weight:600}
+.gl{font-size:28px;font-weight:500;color:var(--dim);letter-spacing:.02em}
+.pill{display:inline-block;font-weight:600;font-size:28px;letter-spacing:.06em;padding:7px 12px;text-transform:uppercase;border-radius:2px;white-space:nowrap}
+.pill.bad{background:var(--orange);color:#fff}.pill.held{background:#fff;color:var(--ink)}.pill.good{border:1px solid rgba(255,255,255,.5)}.pill.dim{color:var(--dim);border:1px solid var(--line2)}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;font-size:28px;font-weight:500;border-radius:2px;background:#fff;color:var(--ink)}
+.btn.ghost{background:rgba(255,255,255,.06);border:1px solid var(--line2);color:#fff}
+.card{background:var(--card);border:1px solid var(--line2)}
+.paper{background:var(--paper);color:var(--ink)}
+.mono{font-family:var(--mono)}
+.ln{display:block;overflow:hidden;padding-bottom:.1em}.ln>span{display:inline-block}
+.hatch{position:absolute;left:0;right:0;height:50px;border-block:1px solid var(--line2);background:repeating-linear-gradient(135deg,rgba(255,255,255,.1) 0 1px,transparent 1px 9px)}
+</style>
+<div id="root" data-composition-id="gap" data-width="1920" data-height="1080">
+<div class="gridbg"></div>
+<div class="top"><div class="brand"><svg class="mark" width="36" height="36" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1" fill="currentColor"/><rect x="9.5" y="8" width="5" height="9" fill="currentColor"/><circle cx="12" cy="20" r="2.6" fill="#ec4a14"/></svg>TAINT</div><div class="chap"><b>02</b>The gap</div></div>
+
+<div class="glow" style="opacity:.5"></div>
+<h1 id="g-h1" class="abs" style="left:96px;top:200px;width:1000px;font-size:104px;letter-spacing:-.04em"><span class="ln"><span class="g1">Agents hold wallets.</span></span><span class="ln"><span class="g1" style="color:var(--dim2)">They read the internet.</span></span></h1>
+<h1 id="g-h2" class="abs" style="left:96px;top:200px;width:1000px;font-size:104px;letter-spacing:-.04em;opacity:0"><span class="ln"><span class="g2">Whoever writes</span></span><span class="ln"><span class="g2">the text</span></span><span class="ln"><span class="g2" style="color:var(--hot)">steers the money.</span></span></h1>
+<div class="abs" style="left:1130px;top:196px;width:694px;display:grid;gap:0;border:1px solid var(--line2);background:rgba(7,8,12,.7)">
+  <div id="g-r1" style="padding:30px 34px;border-bottom:1px solid var(--line2)"><div class="gl">ALLOWLIST</div><div style="font-size:36px;margin-top:8px;letter-spacing:-.02em">Checks <b style="font-weight:600">where</b> funds go</div><div style="margin-top:12px"><span class="pill good">Checked</span></div></div>
+  <div id="g-r2" style="padding:30px 34px;border-bottom:1px solid var(--line2)"><div class="gl">SIMULATOR</div><div style="font-size:36px;margin-top:8px;letter-spacing:-.02em">Checks <b style="font-weight:600">what</b> a transaction does</div><div style="margin-top:12px"><span class="pill good">Checked</span></div></div>
+  <div id="g-r3" class="paper" style="padding:30px 34px"><div class="gl" style="color:#5d6069">WHO DECIDED?</div><div style="font-size:36px;margin-top:8px;letter-spacing:-.02em;color:var(--orange)">Nobody records it</div><div style="margin-top:12px"><span class="pill bad">Not checked</span></div></div>
+</div>
+<div class="hatch" id="g-hatch" style="top:790px"></div>
+<div id="g-foot" class="abs" style="left:96px;top:620px;font-size:28px;color:var(--soft);max-width:940px;line-height:1.4">An injected “buy max $SCAM” on an allowlisted DEX still looks like a normal swap.</div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+
+const rv=(s,t,d=.9,y=28,ease="power4.out")=>tl.fromTo(s,{opacity:0,y,filter:"blur(10px)"},{opacity:1,y:0,filter:"blur(0px)",duration:d,ease},t);
+const lines=(s,t,gap=.12,d=1)=>tl.fromTo(s,{yPercent:105,opacity:0},{yPercent:0,opacity:1,duration:d,ease:"expo.out",stagger:gap},t);
+const words=(s,t,gap=.07,d=.7)=>tl.fromTo(s,{opacity:0,filter:"blur(8px)",y:14},{opacity:1,filter:"blur(0px)",y:0,duration:d,ease:"power4.out",stagger:gap},t);
+const fade=(s,t,d=.5)=>tl.fromTo(s,{opacity:0},{opacity:1,duration:d,ease:"power2.out"},t);
+const out=(s,t,d=.4)=>tl.to(s,{opacity:0,filter:"blur(8px)",duration:d,ease:"power3.in"},t);
+const grow=(s,t,d=.9)=>tl.fromTo(s,{scaleX:0},{scaleX:1,duration:d,ease:"expo.out",transformOrigin:"left center"},t);
+
+tl.fromTo('.gridbg',{x:0},{x:120,duration:13.71,ease:'none'},0);
+
+lines('#g-h1 .g1',.5,.14);
+out('#g-h1',3.72-.2,.5);
+tl.set('#g-h2',{opacity:1},3.72+.1);
+lines('#g-h2 .g2',3.72+.25,.14);
+rv('#g-r1',6.60,.9,30);
+rv('#g-r2',8.67,.9,30);
+tl.fromTo('#g-r3',{opacity:0,x:60,filter:'blur(12px)'},{opacity:1,x:0,filter:'blur(0px)',duration:.8,ease:'expo.out'},11.30);
+tl.fromTo('#g-hatch',{opacity:0,backgroundPosition:'0 0'},{opacity:1,backgroundPosition:'400px 0',duration:6,ease:'none'},.4);
+fade('#g-foot',6.60+.4,.8);
+
+window.__timelines["gap"] = tl;
+</script>
+</template>
