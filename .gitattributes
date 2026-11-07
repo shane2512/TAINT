@@ -1,4 +1,3 @@
 # Keep GitHub's language bar about the real code (Rust, TypeScript)
 video/** linguist-vendored
-docs/assets/src/*.html linguist-generated
 docs/img/** linguist-generated
