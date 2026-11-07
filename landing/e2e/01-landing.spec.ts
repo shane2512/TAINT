@@ -1,4 +1,4 @@
-import { expect, listDir, readJson, test } from "./fixtures";
+import { expect, listDir, readJson, readText, test } from "./fixtures";
 
 test.describe("landing page", () => {
   test.beforeEach(async ({ page }) => page.goto("/"));
@@ -80,13 +80,15 @@ test.describe("landing page", () => {
     const file = listDir("bench", "results").filter((f) => f.endsWith("-LIVE.json")).at(-1)!;
     const { rows } = readJson("bench", "results", file);
     const n = (agent: string, kind: string, outcome?: string) => rows.filter((r: any) => r.agent === agent && r.fixture.startsWith(kind) && (!outcome || r.outcome === outcome)).length;
-    const redTotal = listDir("bench", "results").filter((f) => /redteam.*\.md$/.test(f)).length * 60;
+    const redFiles = listDir("bench", "results").filter((f) => /redteam.*\.md$/.test(f));
+    const redTotal = redFiles.length * 60;
+    const redFail = redFiles.reduce((a, f) => a + Number(/failures: (\d+)/.exec(readText("bench", "results", f))![1]), 0);
     const grid = page.getByTestId("statgrid");
     await grid.scrollIntoViewIfNeeded();
     const cells = grid.locator(".stat");
     await expect(cells.nth(0).locator(".stat-n")).toHaveText(String(n("taint", "F", "pending")), { timeout: 9000 });
     await expect(cells.nth(0)).toContainText(`of ${n("taint", "F")}`);
-    await expect(cells.nth(1).locator(".stat-n")).toHaveText("0", { timeout: 9000 });
+    await expect(cells.nth(1).locator(".stat-n")).toHaveText(String(redFail), { timeout: 9000 });
     await expect(cells.nth(1)).toContainText(`in ${redTotal} live red-team attempts`);
     await expect(cells.nth(2).locator(".stat-n")).toHaveText(String(n("taint", "L", "ok")), { timeout: 9000 });
     await expect(grid).toContainText("One model, one provider, four fixtures the authors chose");
